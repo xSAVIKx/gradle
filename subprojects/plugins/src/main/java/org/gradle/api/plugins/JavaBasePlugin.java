@@ -39,6 +39,7 @@ import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.internal.DefaultJavaPluginConvention;
 import org.gradle.api.plugins.internal.DefaultJavaPluginExtension;
+import org.gradle.api.plugins.internal.JvmEcosystemUtilitiesInternal;
 import org.gradle.api.plugins.internal.JvmPluginsHelper;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.reporting.DirectoryReport;
@@ -53,7 +54,6 @@ import org.gradle.api.tasks.testing.JUnitXmlReport;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.internal.component.external.model.JavaEcosystemVariantDerivationStrategy;
 import org.gradle.internal.deprecation.DeprecatableConfiguration;
-import org.gradle.internal.model.RuleBasedPluginListener;
 import org.gradle.jvm.toolchain.JavaInstallationRegistry;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.language.jvm.tasks.ProcessResources;
@@ -100,12 +100,14 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
     private final ObjectFactory objectFactory;
     private final JavaInstallationRegistry javaInstallationRegistry;
     private final boolean javaClasspathPackaging;
+    private final JvmEcosystemUtilitiesInternal jvmEcosystemUtilities;
 
     @Inject
-    public JavaBasePlugin(ObjectFactory objectFactory, JavaInstallationRegistry javaInstallationRegistry) {
+    public JavaBasePlugin(ObjectFactory objectFactory, JavaInstallationRegistry javaInstallationRegistry, JvmEcosystemUtilities jvmEcosystemUtilities) {
         this.objectFactory = objectFactory;
         this.javaInstallationRegistry = javaInstallationRegistry;
         this.javaClasspathPackaging = Boolean.getBoolean(COMPILE_CLASSPATH_PACKAGING_SYSTEM_PROPERTY);
+        this.jvmEcosystemUtilities = (JvmEcosystemUtilitiesInternal) jvmEcosystemUtilities;
     }
 
     @Override
@@ -114,6 +116,7 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
         project.getPluginManager().apply(ReportingBasePlugin.class);
 
         JavaPluginConvention javaConvention = addExtensions(project);
+        jvmEcosystemUtilities.setJavaConvention(javaConvention);
 
         configureSourceSetDefaults(javaConvention);
         configureCompileDefaults(project, javaConvention);
@@ -136,18 +139,13 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
         JavaPluginConvention javaConvention = new DefaultJavaPluginConvention(project, objectFactory);
         project.getConvention().getPlugins().put("java", javaConvention);
         project.getExtensions().add(SourceSetContainer.class, "sourceSets", javaConvention.getSourceSets());
-        project.getExtensions().create(JavaPluginExtension.class, "java", DefaultJavaPluginExtension.class, javaConvention, project);
+        project.getExtensions().create(JavaPluginExtension.class, "java", DefaultJavaPluginExtension.class, javaConvention, project, jvmEcosystemUtilities);
         project.getExtensions().add(JavaInstallationRegistry.class, "javaInstalls", javaInstallationRegistry);
         return javaConvention;
     }
 
     private void bridgeToSoftwareModelIfNecessary(ProjectInternal project) {
-        project.addRuleBasedPluginListener(new RuleBasedPluginListener() {
-            @Override
-            public void prepareForRuleBasedPlugins(Project project) {
-                project.getPluginManager().apply(JavaBasePluginRules.class);
-            }
-        });
+        project.addRuleBasedPluginListener(project1 -> project1.getPluginManager().apply(JavaBasePluginRules.class));
     }
 
     private void configureSchema(ProjectInternal project) {
@@ -160,25 +158,22 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
 
     private void configureSourceSetDefaults(final JavaPluginConvention pluginConvention) {
         final Project project = pluginConvention.getProject();
-        pluginConvention.getSourceSets().all(new Action<SourceSet>() {
-            @Override
-            public void execute(final SourceSet sourceSet) {
-                ConventionMapping outputConventionMapping = ((IConventionAware) sourceSet.getOutput()).getConventionMapping();
+        pluginConvention.getSourceSets().all(sourceSet -> {
+            ConventionMapping outputConventionMapping = ((IConventionAware) sourceSet.getOutput()).getConventionMapping();
 
-                ConfigurationContainer configurations = project.getConfigurations();
+            ConfigurationContainer configurations = project.getConfigurations();
 
-                defineConfigurationsForSourceSet(sourceSet, configurations, pluginConvention);
-                definePathsForSourceSet(sourceSet, outputConventionMapping, project);
+            defineConfigurationsForSourceSet(sourceSet, configurations, pluginConvention);
+            definePathsForSourceSet(sourceSet, outputConventionMapping, project);
 
-                createProcessResourcesTask(sourceSet, sourceSet.getResources(), project);
-                TaskProvider<JavaCompile> compileTask = createCompileJavaTask(sourceSet, sourceSet.getJava(), project);
-                createClassesTask(sourceSet, project);
+            createProcessResourcesTask(sourceSet, sourceSet.getResources(), project);
+            TaskProvider<JavaCompile> compileTask = createCompileJavaTask(sourceSet, sourceSet.getJava(), project);
+            createClassesTask(sourceSet, project);
 
-                configureLibraryElements(compileTask, sourceSet, configurations, project.getObjects());
-                configureTargetPlatform(compileTask, sourceSet, configurations, pluginConvention);
+            configureLibraryElements(compileTask, sourceSet, configurations, project.getObjects());
+            configureTargetPlatform(sourceSet, configurations);
 
-                JvmPluginsHelper.configureOutputDirectoryForSourceSet(sourceSet, sourceSet.getJava(), project, compileTask, compileTask.map(JavaCompile::getOptions));
-            }
+            JvmPluginsHelper.configureOutputDirectoryForSourceSet(sourceSet, sourceSet.getJava(), project, compileTask, compileTask.map(JavaCompile::getOptions));
         });
     }
 
@@ -187,71 +182,48 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
         ((ConfigurationInternal) configurations.getByName(sourceSet.getCompileClasspathConfigurationName())).beforeLocking(configureLibraryElements);
     }
 
-    private void configureTargetPlatform(TaskProvider<JavaCompile> compileTaskProvider, SourceSet sourceSet, ConfigurationContainer configurations, JavaPluginConvention pluginConvention) {
-        Action<ConfigurationInternal> configureDefaultTargetPlatform = JvmPluginsHelper.configureDefaultTargetPlatform(pluginConvention, false, compileTaskProvider);
-        ((ConfigurationInternal) configurations.getByName(sourceSet.getCompileClasspathConfigurationName())).beforeLocking(configureDefaultTargetPlatform);
-        ((ConfigurationInternal) configurations.getByName(sourceSet.getRuntimeClasspathConfigurationName())).beforeLocking(configureDefaultTargetPlatform);
+    private void configureTargetPlatform(SourceSet sourceSet, ConfigurationContainer configurations) {
+        jvmEcosystemUtilities.useDefaultTargetPlatformInference(configurations.getByName(sourceSet.getCompileClasspathConfigurationName()), sourceSet);
+        jvmEcosystemUtilities.useDefaultTargetPlatformInference(configurations.getByName(sourceSet.getRuntimeClasspathConfigurationName()), sourceSet);
     }
 
     private TaskProvider<JavaCompile> createCompileJavaTask(final SourceSet sourceSet, final SourceDirectorySet sourceDirectorySet, final Project target) {
-        return target.getTasks().register(sourceSet.getCompileJavaTaskName(), JavaCompile.class, new Action<JavaCompile>() {
-            @Override
-            public void execute(JavaCompile compileTask) {
-                compileTask.setDescription("Compiles " + sourceDirectorySet + ".");
-                compileTask.setSource(sourceDirectorySet);
-                ConventionMapping conventionMapping = compileTask.getConventionMapping();
-                conventionMapping.map("classpath", new Callable<Object>() {
-                    @Override
-                    public Object call() {
-                        return sourceSet.getCompileClasspath();
-                    }
-                });
-                JvmPluginsHelper.configureAnnotationProcessorPath(sourceSet, sourceDirectorySet, compileTask.getOptions(), target);
-                String generatedHeadersDir = "generated/sources/headers/" + sourceDirectorySet.getName() + "/" + sourceSet.getName();
-                compileTask.getOptions().getHeaderOutputDirectory().convention(target.getLayout().getBuildDirectory().dir(generatedHeadersDir));
-                JavaPluginExtension javaPluginExtension = target.getExtensions().getByType(JavaPluginExtension.class);
-                compileTask.getModularity().getInferModulePath().convention(javaPluginExtension.getModularity().getInferModulePath());
-            }
+        return target.getTasks().register(sourceSet.getCompileJavaTaskName(), JavaCompile.class, compileTask -> {
+            compileTask.setDescription("Compiles " + sourceDirectorySet + ".");
+            compileTask.setSource(sourceDirectorySet);
+            ConventionMapping conventionMapping = compileTask.getConventionMapping();
+            conventionMapping.map("classpath", sourceSet::getCompileClasspath);
+            JvmPluginsHelper.configureAnnotationProcessorPath(sourceSet, sourceDirectorySet, compileTask.getOptions(), target);
+            String generatedHeadersDir = "generated/sources/headers/" + sourceDirectorySet.getName() + "/" + sourceSet.getName();
+            compileTask.getOptions().getHeaderOutputDirectory().convention(target.getLayout().getBuildDirectory().dir(generatedHeadersDir));
+            JavaPluginExtension javaPluginExtension = target.getExtensions().getByType(JavaPluginExtension.class);
+            compileTask.getModularity().getInferModulePath().convention(javaPluginExtension.getModularity().getInferModulePath());
         });
     }
 
     private void createProcessResourcesTask(final SourceSet sourceSet, final SourceDirectorySet resourceSet, final Project target) {
-        target.getTasks().register(sourceSet.getProcessResourcesTaskName(), ProcessResources.class, new Action<ProcessResources>() {
-            @Override
-            public void execute(ProcessResources resourcesTask) {
-                resourcesTask.setDescription("Processes " + resourceSet + ".");
-                new DslObject(resourcesTask.getRootSpec()).getConventionMapping().map("destinationDir", new Callable<File>() {
-                    @Override
-                    public File call() {
-                        return sourceSet.getOutput().getResourcesDir();
-                    }
-                });
-                resourcesTask.from(resourceSet);
-            }
+        target.getTasks().register(sourceSet.getProcessResourcesTaskName(), ProcessResources.class, resourcesTask -> {
+            resourcesTask.setDescription("Processes " + resourceSet + ".");
+            new DslObject(resourcesTask.getRootSpec()).getConventionMapping().map("destinationDir", (Callable<File>) () -> sourceSet.getOutput().getResourcesDir());
+            resourcesTask.from(resourceSet);
         });
     }
 
     private void createClassesTask(final SourceSet sourceSet, Project target) {
-        Provider<Task> classesTask = target.getTasks().register(sourceSet.getClassesTaskName(), new Action<Task>() {
-            @Override
-            public void execute(Task classesTask) {
-                classesTask.setGroup(LifecycleBasePlugin.BUILD_GROUP);
-                classesTask.setDescription("Assembles " + sourceSet.getOutput() + ".");
-                classesTask.dependsOn(sourceSet.getOutput().getDirs());
-                classesTask.dependsOn(sourceSet.getCompileJavaTaskName());
-                classesTask.dependsOn(sourceSet.getProcessResourcesTaskName());
-            }
+        Provider<Task> classesTask = target.getTasks().register(sourceSet.getClassesTaskName(), classesTask1 -> {
+            classesTask1.setGroup(LifecycleBasePlugin.BUILD_GROUP);
+            classesTask1.setDescription("Assembles " + sourceSet.getOutput() + ".");
+            classesTask1.dependsOn(sourceSet.getOutput().getDirs());
+            classesTask1.dependsOn(sourceSet.getCompileJavaTaskName());
+            classesTask1.dependsOn(sourceSet.getProcessResourcesTaskName());
         });
         sourceSet.compiledBy(classesTask);
     }
 
     private void definePathsForSourceSet(final SourceSet sourceSet, ConventionMapping outputConventionMapping, final Project project) {
-        outputConventionMapping.map("resourcesDir", new Callable<Object>() {
-            @Override
-            public Object call() {
-                String classesDirName = "resources/" + sourceSet.getName();
-                return new File(project.getBuildDir(), classesDirName);
-            }
+        outputConventionMapping.map("resourcesDir", () -> {
+            String classesDirName = "resources/" + sourceSet.getName();
+            return new File(project.getBuildDir(), classesDirName);
         });
 
         sourceSet.getJava().srcDir("src/" + sourceSet.getName() + "/java");
@@ -296,14 +268,16 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
         compileClasspathConfiguration.extendsFrom(compileOnlyConfiguration, implementationConfiguration);
         compileClasspathConfiguration.setDescription("Compile classpath for " + sourceSetName + ".");
         compileClasspathConfiguration.setCanBeConsumed(false);
-        JvmPluginsHelper.configureAttributesForCompileClasspath(compileClasspathConfiguration, objectFactory);
+
+        jvmEcosystemUtilities.configureAsCompileClasspath(compileClasspathConfiguration);
 
         ConfigurationInternal annotationProcessorConfiguration = (ConfigurationInternal) configurations.maybeCreate(annotationProcessorConfigurationName);
         annotationProcessorConfiguration.setVisible(false);
         annotationProcessorConfiguration.setDescription("Annotation processors and their dependencies for " + sourceSetName + ".");
         annotationProcessorConfiguration.setCanBeConsumed(false);
         annotationProcessorConfiguration.setCanBeResolved(true);
-        JvmPluginsHelper.configureAttributesForRuntimeClasspath(annotationProcessorConfiguration, objectFactory);
+
+        jvmEcosystemUtilities.configureAsRuntimeClasspath(annotationProcessorConfiguration);
 
         Configuration runtimeOnlyConfiguration = configurations.maybeCreate(runtimeOnlyConfigurationName);
         runtimeOnlyConfiguration.setVisible(false);
@@ -317,7 +291,7 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
         runtimeClasspathConfiguration.setCanBeResolved(true);
         runtimeClasspathConfiguration.setDescription("Runtime classpath of " + sourceSetName + ".");
         runtimeClasspathConfiguration.extendsFrom(runtimeOnlyConfiguration, runtimeConfiguration, implementationConfiguration);
-        JvmPluginsHelper.configureAttributesForRuntimeClasspath(runtimeClasspathConfiguration, objectFactory);
+        jvmEcosystemUtilities.configureAsRuntimeClasspath(runtimeClasspathConfiguration);
 
         sourceSet.setCompileClasspath(compileClasspathConfiguration);
         sourceSet.setRuntimeClasspath(sourceSet.getOutput().plus(runtimeClasspathConfiguration));
@@ -339,74 +313,39 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
     }
 
     private void configureCompileDefaults(final Project project, final JavaPluginConvention javaConvention) {
-        project.getTasks().withType(AbstractCompile.class).configureEach(new Action<AbstractCompile>() {
-            @Override
-            public void execute(final AbstractCompile compile) {
-                ConventionMapping conventionMapping = compile.getConventionMapping();
-                conventionMapping.map("sourceCompatibility", new Callable<Object>() {
-                    @Override
-                    public Object call() {
-                        return javaConvention.getSourceCompatibility().toString();
-                    }
-                });
-                conventionMapping.map("targetCompatibility", new Callable<Object>() {
-                    @Override
-                    public Object call() {
-                        return javaConvention.getTargetCompatibility().toString();
-                    }
-                });
-            }
+        project.getTasks().withType(AbstractCompile.class).configureEach(compile -> {
+            ConventionMapping conventionMapping = compile.getConventionMapping();
+            conventionMapping.map("sourceCompatibility", () -> javaConvention.getSourceCompatibility().toString());
+            conventionMapping.map("targetCompatibility", () -> javaConvention.getTargetCompatibility().toString());
         });
     }
 
     private void configureJavaDoc(final Project project, final JavaPluginConvention convention) {
-        project.getTasks().withType(Javadoc.class).configureEach(new Action<Javadoc>() {
-            @Override
-            public void execute(Javadoc javadoc) {
-                javadoc.getConventionMapping().map("destinationDir", new Callable<Object>() {
-                    @Override
-                    public Object call() {
-                        return new File(convention.getDocsDir(), "javadoc");
-                    }
-                });
-                javadoc.getConventionMapping().map("title", new Callable<Object>() {
-                    @Override
-                    public Object call() {
-                        return project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle();
-                    }
-                });
-            }
+        project.getTasks().withType(Javadoc.class).configureEach(javadoc -> {
+            javadoc.getConventionMapping().map("destinationDir", () -> new File(convention.getDocsDir(), "javadoc"));
+            javadoc.getConventionMapping().map("title", () -> project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());
         });
     }
 
     private void configureBuildNeeded(Project project) {
-        project.getTasks().register(BUILD_NEEDED_TASK_NAME, new Action<Task>() {
-            @Override
-            public void execute(Task buildTask) {
-                buildTask.setDescription("Assembles and tests this project and all projects it depends on.");
-                buildTask.setGroup(BasePlugin.BUILD_GROUP);
-                buildTask.dependsOn(BUILD_TASK_NAME);
-            }
+        project.getTasks().register(BUILD_NEEDED_TASK_NAME, buildTask -> {
+            buildTask.setDescription("Assembles and tests this project and all projects it depends on.");
+            buildTask.setGroup(BasePlugin.BUILD_GROUP);
+            buildTask.dependsOn(BUILD_TASK_NAME);
         });
     }
 
     private void configureBuildDependents(Project project) {
-        project.getTasks().register(BUILD_DEPENDENTS_TASK_NAME, new Action<Task>() {
-            @Override
-            public void execute(Task buildTask) {
-                buildTask.setDescription("Assembles and tests this project and all projects that depend on it.");
-                buildTask.setGroup(BasePlugin.BUILD_GROUP);
-                buildTask.dependsOn(BUILD_TASK_NAME);
-                boolean hasIncludedBuilds = !buildTask.getProject().getGradle().getIncludedBuilds().isEmpty();
-                buildTask.doFirst(new Action<Task>() {
-                    @Override
-                    public void execute(Task task) {
-                        if (hasIncludedBuilds) {
-                            task.getLogger().warn("[composite-build] Warning: `" + task.getPath() + "` task does not build included builds.");
-                        }
-                    }
-                });
-            }
+        project.getTasks().register(BUILD_DEPENDENTS_TASK_NAME, buildTask -> {
+            buildTask.setDescription("Assembles and tests this project and all projects that depend on it.");
+            buildTask.setGroup(BasePlugin.BUILD_GROUP);
+            buildTask.dependsOn(BUILD_TASK_NAME);
+            boolean hasIncludedBuilds = !buildTask.getProject().getGradle().getIncludedBuilds().isEmpty();
+            buildTask.doFirst(task -> {
+                if (hasIncludedBuilds) {
+                    task.getLogger().warn("[composite-build] Warning: `" + task.getPath() + "` task does not build included builds.");
+                }
+            });
         });
     }
 
