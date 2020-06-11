@@ -25,8 +25,10 @@ import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.ProjectConnection
 import org.gradle.tooling.model.GradleProject
 import org.gradle.tooling.model.eclipse.EclipseProject
-import spock.lang.Ignore
+import spock.lang.Timeout
 import spock.util.concurrent.PollingConditions
+
+import java.util.concurrent.TimeUnit
 
 @ToolingApiVersion(">=6.5")
 class ToolingApiShutdownCrossVersionSpec extends CancellationSpec {
@@ -176,7 +178,7 @@ class ToolingApiShutdownCrossVersionSpec extends CancellationSpec {
         assertNoRunningDaemons()
     }
 
-    @Ignore
+    @Timeout(value = 2, unit = TimeUnit.MINUTES)
     def "can call disconnect after the build was cancelled"() {
         buildFile << """
             task hang {
