@@ -15,6 +15,18 @@
             "changes": [
                 "Method has been removed"
             ]
+        },
+        {
+            "acceptedApiChanges": [
+                {
+                    "type": "org.gradle.api.plugins.JavaLibraryPlugin",
+                    "member": "Constructor org.gradle.api.plugins.JavaLibraryPlugin()",
+                    "acceptation": "This is an @Inject'ed constructor, not part of the API",
+                    "changes": [
+                        "Constructor has been removed"
+                    ]
+                }
+            ]
         }
     ]
 }
