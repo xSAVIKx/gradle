@@ -237,6 +237,7 @@ $binFile.text
 task execStartScript(type: Exec) {
     workingDir '$startScriptDir.canonicalPath'
     commandLine './sample'
+    environment JAVA_OPTS: ''
 }
 """
         return succeeds('execStartScript')
@@ -249,7 +250,7 @@ task execStartScript(type: Exec) {
 task execStartScript(type: Exec) {
     workingDir '$startScriptDir.canonicalPath'
     commandLine './sample'
-    environment JAVA_HOME: "$javaHome"
+    environment JAVA_HOME: "$javaHome", JAVA_OPTS: ''
 }
 """
         return succeeds('execStartScript')
@@ -261,6 +262,7 @@ task execStartScript(type: Exec) {
 task execStartScript(type: Exec) {
     workingDir '$escapedStartScriptDir'
     commandLine 'cmd', '/c', 'sample.bat'
+    environment JAVA_OPTS: ''
 }
 """
         return succeeds('execStartScript')

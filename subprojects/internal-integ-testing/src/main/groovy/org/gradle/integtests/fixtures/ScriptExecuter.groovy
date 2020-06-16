@@ -35,6 +35,7 @@ class ScriptExecuter {
             executable = "${workingDir}/${executable}"
         }
         builder.environment("JAVA_HOME", System.getProperty("java.home"))
+        builder.environment("JAVA_OPTS", "")
         return builder.build()
     }
 

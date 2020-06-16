@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 the original author or authors.
+ * Copyright 2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package org.gradle.plugin.devel
+package DistributedTest.configurations
 
-import org.gradle.integtests.fixtures.AbstractAutoTestedSamplesTest
-import org.junit.Test
+val triggerExcludes = """
+        -:.idea
+        -:.github
+        -:.teamcity
+        -:.teamcityTest
+        -:subprojects/docs/src/docs/release
+    """.trimIndent()
 
-class AutoTestedSamplesPluginDevelopmentIntegrationTest extends AbstractAutoTestedSamplesTest {
+val masterReleaseBranchFilter = """
+    +:master
+    +:release
+""".trimIndent()
 
-    @Test
-    void runSamples() {
-        runSamplesFrom("subprojects/plugin-development/src/main")
-    }
-}
+val allBranchesFilter = """
+    +:*
+    -:<default>
+""".trimIndent()

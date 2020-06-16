@@ -147,6 +147,7 @@ class LocalRepositoryEnvironmentProvider(project: Project) : CommandLineArgument
                 include("**/*.module")
             }
 
+
     override fun asArguments() =
         if (!localRepo.isEmpty) mapOf("integTest.localRepository" to localRepo.singleFile).asSystemPropertyJvmArguments()
         else emptyList()

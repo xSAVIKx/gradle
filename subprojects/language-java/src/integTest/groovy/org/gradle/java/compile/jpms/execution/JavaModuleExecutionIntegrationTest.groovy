@@ -171,7 +171,7 @@ class JavaModuleExecutionIntegrationTest extends AbstractJavaModuleCompileIntegr
             task run {
                 dependsOn jar
                 doLast {
-                    project.javaexec {
+                    javaexec {
                         modularity.inferModulePath.set(true)
                         classpath = files(jar) + configurations.runtimeClasspath
                         mainModule.set('consumer')
@@ -200,7 +200,7 @@ class JavaModuleExecutionIntegrationTest extends AbstractJavaModuleCompileIntegr
             task run {
                 dependsOn jar
                 doLast {
-                    project.javaexec {
+                    javaexec {
                         modularity.inferModulePath.set(true)
                         classpath = files(jar) + configurations.runtimeClasspath
                         mainModule.set('consumer')

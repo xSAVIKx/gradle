@@ -16,6 +16,7 @@
 
 import plugins.futurePluginVersionsFile
 import org.gradle.gradlebuild.testing.integrationtests.cleanup.WhenNotEmpty
+import org.gradle.gradlebuild.test.integrationtests.IntegrationTest
 
 plugins {
     gradlebuild.internal.kotlin
@@ -71,6 +72,10 @@ tasks {
     processIntegTestResources {
         dependsOn(writeFuturePluginVersions)
     }
+}
+
+tasks.withType<IntegrationTest>().configureEach {
+    dependsOn(":kotlinDslPlugins:publishPluginsToTestRepository")
 }
 
 testFilesCleanup {
