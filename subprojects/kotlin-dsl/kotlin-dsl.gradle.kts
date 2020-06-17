@@ -98,6 +98,7 @@ dependencies {
     integTestImplementation(project(":languageGroovy")) {
         because("ClassBytesRepositoryTest makes use of Groovydoc task.")
     }
+    testImplementation(project(":internalTesting"))
     integTestImplementation(project(":internalTesting"))
     integTestImplementation(testLibrary("mockito_kotlin"))
 
