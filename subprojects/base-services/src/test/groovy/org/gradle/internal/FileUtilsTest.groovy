@@ -16,11 +16,9 @@
 
 package org.gradle.internal
 
-import org.apache.commons.lang.RandomStringUtils
-import org.gradle.api.GradleException
+
 import spock.lang.Specification
 
-import static FileUtils.assertInWindowsPathLengthLimitation
 import static FileUtils.toSafeFileName
 import static org.gradle.internal.FileUtils.calculateRoots
 import static org.gradle.internal.FileUtils.withExtension
@@ -40,20 +38,6 @@ class FileUtilsTest extends Specification {
         'with /'      | 'with#20#2f'
         'with \\'     | 'with#20#5c'
         'with / \\ #' | 'with#20#2f#20#5c#20#23'
-    }
-
-    def "assertInWindowsPathLengthLimitation throws exception when path limit exceeded"() {
-        when:
-        File inputFile = new File(RandomStringUtils.randomAlphanumeric(10))
-        then:
-        inputFile == assertInWindowsPathLengthLimitation(inputFile);
-
-        when:
-        inputFile = new File(RandomStringUtils.randomAlphanumeric(261))
-        assertInWindowsPathLengthLimitation(inputFile);
-        then:
-        def e = thrown(GradleException);
-        e.message.contains("exceeds windows path limitation of 260 character.")
     }
 
     List<File> toRoots(Iterable<? extends File> files) {

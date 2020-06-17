@@ -24,6 +24,7 @@ import org.gradle.kotlin.dsl.fixtures.withClassLoaderFor
 import org.gradle.kotlin.dsl.support.compileKotlinScriptToDirectory
 import org.gradle.kotlin.dsl.support.messageCollectorFor
 import org.gradle.kotlin.dsl.support.scriptDefinitionFromTemplate
+import org.gradle.test.fixtures.file.TestDir
 
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
@@ -42,6 +43,7 @@ open class TheKotlinScriptTemplate(
 }
 
 
+@TestDir("KSCT")
 class KotlinScriptCompilerTest : TestWithTempFiles() {
 
     @Test

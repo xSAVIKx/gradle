@@ -20,6 +20,7 @@ import org.gradle.api.Project
 
 import org.gradle.kotlin.dsl.fixtures.AbstractDslTest
 import org.gradle.kotlin.dsl.fixtures.newProjectBuilderProjectWith
+import org.gradle.test.fixtures.file.TestDir
 
 import org.hamcrest.CoreMatchers.hasItem
 import org.hamcrest.CoreMatchers.hasItems
@@ -28,6 +29,7 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 
 
+@TestDir("NCDT")
 class NamedContainersDslTest : AbstractDslTest() {
 
     @Test
@@ -67,17 +69,17 @@ class NamedContainersDslTest : AbstractDslTest() {
                 val bar: Configuration = getByName("bar") {
                     extendsFrom(foo)
                 }
-    
+
                 val bazar: Configuration = create("bazar")
                 val cathedral: Configuration = create("cathedral") {
                     extendsFrom(bazar)
                 }
-    
+
                 val cabin: NamedDomainObjectProvider<Configuration> = named("cabin")
                 val castle: NamedDomainObjectProvider<Configuration> = named("castle") {
                     extendsFrom(cabin.get())
                 }
-    
+
                 val valley: NamedDomainObjectProvider<Configuration> = register("valley")
                 val hill: NamedDomainObjectProvider<Configuration> = register("hill") {
                     extendsFrom(valley.get())

@@ -69,8 +69,10 @@ import java.io.File
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier.PUBLIC
 import java.lang.reflect.Modifier.STATIC
+import org.gradle.test.fixtures.file.TestDir
 
 
+@TestDir("PACPT")
 class ProjectAccessorsClassPathTest : AbstractDslTest() {
 
     @Test

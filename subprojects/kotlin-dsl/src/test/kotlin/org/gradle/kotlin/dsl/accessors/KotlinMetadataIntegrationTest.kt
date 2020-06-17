@@ -28,6 +28,7 @@ import org.gradle.kotlin.dsl.fixtures.TestWithTempFiles
 import org.gradle.kotlin.dsl.fixtures.testRuntimeClassPath
 import org.gradle.kotlin.dsl.support.compileToDirectory
 import org.gradle.kotlin.dsl.support.loggerFor
+import org.gradle.test.fixtures.file.TestDir
 
 import org.junit.Test
 
@@ -42,6 +43,7 @@ fun <T : Dependency> DependencyHandler.foo(
 ): T = TODO()
 
 
+@TestDir("KMIT")
 class KotlinMetadataIntegrationTest : TestWithTempFiles() {
 
     @Test

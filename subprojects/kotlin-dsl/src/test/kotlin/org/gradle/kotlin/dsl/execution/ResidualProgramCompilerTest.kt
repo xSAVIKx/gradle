@@ -45,6 +45,7 @@ import org.gradle.kotlin.dsl.fixtures.assertInstanceOf
 import org.gradle.kotlin.dsl.fixtures.assertStandardOutputOf
 
 import org.gradle.plugin.management.internal.PluginRequests
+import org.gradle.test.fixtures.file.TestDir
 
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
@@ -55,6 +56,7 @@ import org.mockito.InOrder
 import java.util.Arrays.fill
 
 
+@TestDir("RPCT")
 class ResidualProgramCompilerTest : TestWithCompiler() {
 
     @Test

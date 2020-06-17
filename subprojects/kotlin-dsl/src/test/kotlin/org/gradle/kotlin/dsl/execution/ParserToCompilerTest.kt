@@ -21,8 +21,10 @@ import com.nhaarman.mockito_kotlin.mock
 import org.gradle.internal.classpath.ClassPath
 import org.gradle.kotlin.dsl.fixtures.assertStandardOutputOf
 import org.junit.Test
+import org.gradle.test.fixtures.file.TestDir
 
 
+@TestDir("PTCT")
 class ParserToCompilerTest : TestWithCompiler() {
 
     @Test
