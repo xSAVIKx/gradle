@@ -18,7 +18,6 @@ package org.gradle.internal;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FilenameUtils;
-import org.gradle.api.GradleException;
 import org.gradle.api.UncheckedIOException;
 
 import java.io.File;
@@ -85,10 +84,6 @@ public class FileUtils {
     }
 
     public static File assertInWindowsPathLengthLimitation(File file) {
-        if (file.getAbsolutePath().length() > WINDOWS_PATH_LIMIT) {
-            throw new GradleException(String.format("Cannot create file. '%s' exceeds windows path limitation of %d character.", file.getAbsolutePath(), WINDOWS_PATH_LIMIT));
-
-        }
         return file;
     }
 
