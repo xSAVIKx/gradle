@@ -33,6 +33,8 @@ import org.gradle.api.specs.Specs;
 import org.gradle.internal.Cast;
 import org.gradle.util.ConfigureUtil;
 
+import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,23 +49,32 @@ public class DefaultDomainObjectCollection<T> extends AbstractCollection<T> impl
     private final ElementSource<T> store;
 
     protected DefaultDomainObjectCollection(Class<? extends T> type, ElementSource<T> store, CollectionCallbackActionDecorator callbackActionDecorator) {
-        this(type, store, new DefaultCollectionEventRegister<T>(type, callbackActionDecorator));
+        this(type, store, (CollectionEventRegister<T>) null);
     }
 
-    protected DefaultDomainObjectCollection(Class<? extends T> type, ElementSource<T> store, final CollectionEventRegister<T> eventRegister) {
+    protected DefaultDomainObjectCollection(Class<? extends T> type, ElementSource<T> store, @Nullable CollectionEventRegister<T> eventRegister) {
         this.type = type;
         this.store = store;
-        this.eventRegister = eventRegister;
+        if (eventRegister != null) {
+            this.eventRegister = eventRegister;
+        } else {
+            this.eventRegister = new DefaultCollectionEventRegister<T>(type, getCollectionCallbackActionDecorator());
+        }
         this.store.onRealize(new Action<T>() {
             @Override
             public void execute(T value) {
-                doAddRealized(value, eventRegister.getAddActions());
+                doAddRealized(value, DefaultDomainObjectCollection.this.eventRegister.getAddActions());
             }
         });
     }
 
     protected DefaultDomainObjectCollection(DefaultDomainObjectCollection<? super T> collection, CollectionFilter<T> filter) {
         this(filter.getType(), collection.filteredStore(filter), collection.filteredEvents(filter));
+    }
+
+    @Inject
+    protected CollectionCallbackActionDecorator getCollectionCallbackActionDecorator() {
+        throw new UnsupportedOperationException(String.format("%s subtypes must be instantiated by Gradle and not instantiated directly.", DomainObjectCollection.class.getName()));
     }
 
     protected void realized(ProviderInternal<? extends T> provider) {

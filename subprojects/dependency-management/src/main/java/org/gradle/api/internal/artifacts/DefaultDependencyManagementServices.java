@@ -482,28 +482,23 @@ public class DefaultDependencyManagementServices implements DependencyManagement
             );
         }
 
-        RepositoryHandler createRepositoryHandler(Instantiator instantiator, BaseRepositoryFactory baseRepositoryFactory, CollectionCallbackActionDecorator callbackDecorator) {
-            return instantiator.newInstance(DefaultRepositoryHandler.class, baseRepositoryFactory, instantiator, callbackDecorator);
+        RepositoryHandler createRepositoryHandler(DomainObjectCollectionFactory factory, BaseRepositoryFactory baseRepositoryFactory) {
+            return factory.newContainer(DefaultRepositoryHandler.class, baseRepositoryFactory);
         }
 
-        ConfigurationContainerInternal createConfigurationContainer(Instantiator instantiator,
+        ConfigurationContainerInternal createConfigurationContainer(DomainObjectCollectionFactory factory,
                                                                     ConfigurationResolver configurationResolver, DomainObjectContext domainObjectContext,
                                                                     ListenerManager listenerManager, DependencyMetaDataProvider metaDataProvider,
                                                                     LocalComponentMetadataBuilder metaDataBuilder, FileCollectionFactory fileCollectionFactory,
-                                                                    GlobalDependencyResolutionRules globalDependencyResolutionRules, VcsMappingsStore vcsMappingsStore, ComponentIdentifierFactory componentIdentifierFactory,
-                                                                    BuildOperationExecutor buildOperationExecutor, ImmutableAttributesFactory attributesFactory,
-                                                                    ImmutableModuleIdentifierFactory moduleIdentifierFactory, ComponentSelectorConverter componentSelectorConverter,
-                                                                    DependencyLockingProvider dependencyLockingProvider,
-                                                                    ProjectStateRegistry projectStateRegistry,
-                                                                    ProjectAccessListener projectAccessListener,
-                                                                    DocumentationRegistry documentationRegistry,
-                                                                    CollectionCallbackActionDecorator callbackDecorator,
-                                                                    UserCodeApplicationContext userCodeApplicationContext,
-                                                                    DomainObjectCollectionFactory domainObjectCollectionFactory,
-                                                                    ObjectFactory objectFactory) {
-            return instantiator.newInstance(DefaultConfigurationContainer.class,
+                                                                    GlobalDependencyResolutionRules globalDependencyResolutionRules, VcsMappingsStore vcsMappingsStore,
+                                                                    ComponentIdentifierFactory componentIdentifierFactory, BuildOperationExecutor buildOperationExecutor,
+                                                                    ImmutableAttributesFactory attributesFactory, ImmutableModuleIdentifierFactory moduleIdentifierFactory,
+                                                                    ComponentSelectorConverter componentSelectorConverter, DependencyLockingProvider dependencyLockingProvider,
+                                                                    ProjectStateRegistry projectStateRegistry, ProjectAccessListener projectAccessListener,
+                                                                    DocumentationRegistry documentationRegistry, UserCodeApplicationContext userCodeApplicationContext,
+                                                                    DomainObjectCollectionFactory domainObjectCollectionFactory, ObjectFactory objectFactory) {
+            return factory.newContainer(DefaultConfigurationContainer.class,
                 configurationResolver,
-                instantiator,
                 domainObjectContext,
                 listenerManager,
                 metaDataProvider,
@@ -521,7 +516,6 @@ public class DefaultDependencyManagementServices implements DependencyManagement
                 dependencyLockingProvider,
                 projectStateRegistry,
                 documentationRegistry,
-                callbackDecorator,
                 userCodeApplicationContext,
                 domainObjectCollectionFactory,
                 objectFactory
@@ -655,7 +649,7 @@ public class DefaultDependencyManagementServices implements DependencyManagement
         }
 
         DependencyResolutionServices createDependencyResolutionServices(ServiceRegistry services) {
-            return new DefaultDependencyResolutionServices(services, domainObjectContext);
+            return new DefaultDependencyResolutionServices(services);
         }
 
         ArtifactResolutionQueryFactory createArtifactResolutionQueryFactory(ConfigurationContainerInternal configurationContainer, RepositoryHandler repositoryHandler,
@@ -668,13 +662,10 @@ public class DefaultDependencyManagementServices implements DependencyManagement
     }
 
     private static class DefaultDependencyResolutionServices implements DependencyResolutionServices {
-
         private final ServiceRegistry services;
-        private final DomainObjectContext domainObjectContext;
 
-        private DefaultDependencyResolutionServices(ServiceRegistry services, DomainObjectContext domainObjectContext) {
+        private DefaultDependencyResolutionServices(ServiceRegistry services) {
             this.services = services;
-            this.domainObjectContext = domainObjectContext;
         }
 
         @Override

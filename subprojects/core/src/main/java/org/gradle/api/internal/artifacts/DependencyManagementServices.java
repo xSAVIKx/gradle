@@ -21,10 +21,13 @@ import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.file.FileCollectionFactory;
 import org.gradle.api.internal.file.FileResolver;
 import org.gradle.internal.service.ServiceRegistration;
+import org.gradle.internal.service.scopes.Scopes;
+import org.gradle.internal.service.scopes.ServiceScope;
 
 /**
  * Factory for various types related to dependency management.
  */
+@ServiceScope(Scopes.Build)
 public interface DependencyManagementServices {
     /**
      * Registers the dependency management DSL services.

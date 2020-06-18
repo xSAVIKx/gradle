@@ -17,9 +17,12 @@
 package org.gradle.api.internal;
 
 import org.gradle.api.Action;
+import org.gradle.internal.service.scopes.Scopes;
+import org.gradle.internal.service.scopes.ServiceScope;
 
 import javax.annotation.Nullable;
 
+@ServiceScope(Scopes.BuildSession)
 public interface CollectionCallbackActionDecorator {
 
     <T> Action<T> decorate(@Nullable Action<T> action);

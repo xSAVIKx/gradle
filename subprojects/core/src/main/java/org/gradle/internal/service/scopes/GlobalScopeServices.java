@@ -249,8 +249,12 @@ public class GlobalScopeServices extends WorkerSharedGlobalScopeServices {
             domainObjectCollectionFactory);
     }
 
-    DomainObjectCollectionFactory createDomainObjectCollectionFactory(InstantiatorFactory instantiatorFactory, ServiceRegistry services) {
-        return new DefaultDomainObjectCollectionFactory(instantiatorFactory, services, CollectionCallbackActionDecorator.NOOP, MutationGuards.identity());
+    CollectionCallbackActionDecorator createCollectionCallbackActionDecorator() {
+        return CollectionCallbackActionDecorator.NOOP;
+    }
+
+    DomainObjectCollectionFactory createDomainObjectCollectionFactory(InstantiatorFactory instantiatorFactory, ServiceRegistry services, CollectionCallbackActionDecorator collectionCallbackActionDecorator) {
+        return new DefaultDomainObjectCollectionFactory(instantiatorFactory, services, collectionCallbackActionDecorator, MutationGuards.identity());
     }
 
     BuildLayoutFactory createBuildLayoutFactory() {

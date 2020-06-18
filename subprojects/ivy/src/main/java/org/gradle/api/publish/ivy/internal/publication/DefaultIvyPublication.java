@@ -19,7 +19,6 @@ package org.gradle.api.publish.ivy.internal.publication;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import org.gradle.api.Action;
-import org.gradle.api.DomainObjectCollection;
 import org.gradle.api.DomainObjectSet;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Task;
@@ -34,7 +33,6 @@ import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.artifacts.PublishArtifact;
 import org.gradle.api.capabilities.Capability;
 import org.gradle.api.component.SoftwareComponent;
-import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.CompositeDomainObjectSet;
 import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier;
 import org.gradle.api.internal.artifacts.dsl.dependencies.PlatformSupport;
@@ -42,6 +40,7 @@ import org.gradle.api.internal.artifacts.ivyservice.projectmodule.ProjectDepende
 import org.gradle.api.internal.attributes.AttributeContainerInternal;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
+import org.gradle.api.internal.collections.DomainObjectCollectionFactory;
 import org.gradle.api.internal.component.IvyPublishingAwareContext;
 import org.gradle.api.internal.component.SoftwareComponentInternal;
 import org.gradle.api.internal.component.UsageContext;
@@ -123,6 +122,7 @@ public class DefaultIvyPublication implements IvyPublicationInternal {
     private final PublicationArtifactSet<IvyArtifact> publishableArtifacts;
     private final DefaultIvyDependencySet ivyDependencies;
     private final ProjectDependencyPublicationResolver projectDependencyResolver;
+    private final DomainObjectCollectionFactory domainObjectCollectionFactory;
     private final PlatformSupport platformSupport;
     private final ImmutableAttributesFactory immutableAttributesFactory;
     private final VersionMappingStrategyInternal versionMappingStrategy;
@@ -132,7 +132,7 @@ public class DefaultIvyPublication implements IvyPublicationInternal {
     private SingleOutputTaskIvyArtifact gradleModuleDescriptorArtifact;
     private SoftwareComponentInternal component;
     private boolean alias;
-    private Set<IvyExcludeRule> globalExcludes = new LinkedHashSet<IvyExcludeRule>();
+    private final Set<IvyExcludeRule> globalExcludes = new LinkedHashSet<IvyExcludeRule>();
     private boolean populated;
     private boolean artifactsOverridden;
     private boolean versionMappingInUse = false;
@@ -143,20 +143,21 @@ public class DefaultIvyPublication implements IvyPublicationInternal {
     public DefaultIvyPublication(
         String name, Instantiator instantiator, ObjectFactory objectFactory, IvyPublicationIdentity publicationIdentity, NotationParser<Object, IvyArtifact> ivyArtifactNotationParser,
         ProjectDependencyPublicationResolver projectDependencyResolver, FileCollectionFactory fileCollectionFactory,
-        ImmutableAttributesFactory immutableAttributesFactory,
-        CollectionCallbackActionDecorator collectionCallbackActionDecorator, VersionMappingStrategyInternal versionMappingStrategy, PlatformSupport platformSupport) {
+        ImmutableAttributesFactory immutableAttributesFactory, DomainObjectCollectionFactory domainObjectCollectionFactory,
+        VersionMappingStrategyInternal versionMappingStrategy, PlatformSupport platformSupport) {
         this.name = name;
         this.publicationIdentity = publicationIdentity;
         this.projectDependencyResolver = projectDependencyResolver;
+        this.domainObjectCollectionFactory = domainObjectCollectionFactory;
         this.platformSupport = platformSupport;
-        this.configurations = instantiator.newInstance(DefaultIvyConfigurationContainer.class, instantiator, collectionCallbackActionDecorator);
+        this.configurations = domainObjectCollectionFactory.newContainer(DefaultIvyConfigurationContainer.class);
         this.immutableAttributesFactory = immutableAttributesFactory;
         this.versionMappingStrategy = versionMappingStrategy;
-        this.mainArtifacts = instantiator.newInstance(DefaultIvyArtifactSet.class, name, ivyArtifactNotationParser, fileCollectionFactory, collectionCallbackActionDecorator);
-        this.metadataArtifacts = new DefaultPublicationArtifactSet<>(IvyArtifact.class, "metadata artifacts for " + name, fileCollectionFactory, collectionCallbackActionDecorator);
-        this.derivedArtifacts = new DefaultPublicationArtifactSet<>(IvyArtifact.class, "derived artifacts for " + name, fileCollectionFactory, collectionCallbackActionDecorator);
+        this.mainArtifacts = domainObjectCollectionFactory.newContainer(DefaultIvyArtifactSet.class, name, ivyArtifactNotationParser, fileCollectionFactory);
+        this.metadataArtifacts = domainObjectCollectionFactory.newContainer(Cast.uncheckedCast(DefaultPublicationArtifactSet.class), IvyArtifact.class, "metadata artifacts for " + name, fileCollectionFactory);
+        this.derivedArtifacts = domainObjectCollectionFactory.newContainer(Cast.uncheckedCast(DefaultPublicationArtifactSet.class), IvyArtifact.class, "derived artifacts for " + name, fileCollectionFactory);
         this.publishableArtifacts = new CompositePublicationArtifactSet<>(IvyArtifact.class, Cast.uncheckedCast(new PublicationArtifactSet<?>[]{mainArtifacts, metadataArtifacts, derivedArtifacts}));
-        this.ivyDependencies = instantiator.newInstance(DefaultIvyDependencySet.class, collectionCallbackActionDecorator);
+        this.ivyDependencies = domainObjectCollectionFactory.newContainer(DefaultIvyDependencySet.class);
         this.descriptor = instantiator.newInstance(DefaultIvyModuleDescriptorSpec.class, this, instantiator, objectFactory);
     }
 
@@ -425,7 +426,7 @@ public class DefaultIvyPublication implements IvyPublicationInternal {
     private void addProjectDependency(ProjectDependency dependency, String confMapping) {
         ModuleVersionIdentifier identifier = projectDependencyResolver.resolve(ModuleVersionIdentifier.class, dependency);
         ivyDependencies.add(new DefaultIvyDependency(
-                identifier.getGroup(), identifier.getName(), identifier.getVersion(), confMapping, dependency.isTransitive(), Collections.<DependencyArtifact>emptyList(), dependency.getExcludeRules()));
+            identifier.getGroup(), identifier.getName(), identifier.getVersion(), confMapping, dependency.isTransitive(), Collections.<DependencyArtifact>emptyList(), dependency.getExcludeRules()));
     }
 
     private void addExternalDependency(ExternalDependency dependency, String confMapping, ImmutableAttributes attributes) {
@@ -549,7 +550,10 @@ public class DefaultIvyPublication implements IvyPublicationInternal {
             }
             return true;
         });
-        Set<IvyArtifact> artifactsToBePublished = CompositeDomainObjectSet.create(IvyArtifact.class, Cast.uncheckedCast(new DomainObjectCollection<?>[]{mainArtifacts, metadataArtifacts, derivedArtifacts})).matching(new Spec<IvyArtifact>() {
+        CompositeDomainObjectSet<IvyArtifact> ivyArtifacts = domainObjectCollectionFactory.newDomainObjectSet(IvyArtifact.class, mainArtifacts);
+        ivyArtifacts.addCollection(metadataArtifacts);
+        ivyArtifacts.addCollection(derivedArtifacts);
+        Set<IvyArtifact> artifactsToBePublished = ivyArtifacts.matching(new Spec<IvyArtifact>() {
             @Override
             public boolean isSatisfiedBy(IvyArtifact element) {
                 if (!PUBLISHED_ARTIFACTS.isSatisfiedBy(element)) {

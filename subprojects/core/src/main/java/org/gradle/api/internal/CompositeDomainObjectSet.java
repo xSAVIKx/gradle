@@ -24,6 +24,8 @@ import org.gradle.api.internal.provider.CollectionProviderInternal;
 import org.gradle.api.internal.provider.ProviderInternal;
 import org.gradle.api.specs.Spec;
 import org.gradle.internal.Actions;
+import org.gradle.internal.Cast;
+import org.gradle.internal.reflect.Instantiator;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -47,12 +49,12 @@ public class CompositeDomainObjectSet<T> extends DelegatingDomainObjectSet<T> im
     @SafeVarargs
     @SuppressWarnings("varargs")
     public static <T> CompositeDomainObjectSet<T> create(Class<T> type, DomainObjectCollection<? extends T>... collections) {
-        return create(type, CollectionCallbackActionDecorator.NOOP, collections);
+        return create(type, null, CollectionCallbackActionDecorator.NOOP, collections);
     }
 
     @SafeVarargs
-    public static <T> CompositeDomainObjectSet<T> create(Class<T> type, CollectionCallbackActionDecorator callbackActionDecorator, DomainObjectCollection<? extends T>... collections) {
-        DefaultDomainObjectSet<T> backingSet = new DefaultDomainObjectSet<T>(type, new DomainObjectCompositeCollection<T>(), callbackActionDecorator);
+    public static <T> CompositeDomainObjectSet<T> create(Class<T> type, Instantiator serviceInjectingInstantiator, CollectionCallbackActionDecorator callbackActionDecorator, DomainObjectCollection<? extends T>... collections) {
+        DefaultDomainObjectSet<T> backingSet = Cast.uncheckedCast(serviceInjectingInstantiator.newInstance(DefaultDomainObjectSet.class, type, new DomainObjectCompositeCollection<T>(), callbackActionDecorator));
         CompositeDomainObjectSet<T> out = new CompositeDomainObjectSet<T>(backingSet, callbackActionDecorator);
         for (DomainObjectCollection<? extends T> c : collections) {
             out.addCollection(c);

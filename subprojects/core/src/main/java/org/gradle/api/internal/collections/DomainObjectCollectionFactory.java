@@ -47,7 +47,7 @@ public interface DomainObjectCollectionFactory {
     /**
      * Creates a {@link NamedDomainObjectContainer} for managing named objects of the specified type. The given closure is used to create object instances. The name of the instance to be created is passed as a parameter to the closure.
      */
-    <T> NamedDomainObjectContainer<T> newNamedDomainObjectContainer(Class<T> type, Closure factoryClosure);
+    <T> NamedDomainObjectContainer<T> newNamedDomainObjectContainer(Class<T> type, Closure<?> factoryClosure);
 
     /**
      * Creates a {@link DomainObjectSet} for managing objects of the specified type.
@@ -64,4 +64,6 @@ public interface DomainObjectCollectionFactory {
     <T> CompositeDomainObjectSet<T> newDomainObjectSet(Class<T> elementType, DomainObjectCollection<? extends T> collection);
 
     <T> ExtensiblePolymorphicDomainObjectContainer<T> newPolymorphicDomainObjectContainer(Class<T> elementType);
+
+    <C extends DomainObjectCollection<T>, T> C newContainer(Class<? extends C> implType, Object... args);
 }

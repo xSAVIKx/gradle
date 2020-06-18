@@ -21,7 +21,6 @@ import com.google.common.collect.Maps;
 import org.gradle.api.Action;
 import org.gradle.api.DomainObjectSet;
 import org.gradle.api.Plugin;
-import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.collections.DomainObjectCollectionFactory;
 import org.gradle.api.plugins.AppliedPlugin;
 import org.gradle.api.plugins.InvalidPluginException;
@@ -63,14 +62,14 @@ public class DefaultPluginManager implements PluginManagerInternal {
 
     private final BuildOperationExecutor buildOperationExecutor;
     private final UserCodeApplicationContext userCodeApplicationContext;
-    private DomainObjectCollectionFactory domainObjectCollectionFactory;
+    private final DomainObjectCollectionFactory domainObjectCollectionFactory;
 
-    public DefaultPluginManager(final PluginRegistry pluginRegistry, Instantiator instantiator, final PluginTarget target, BuildOperationExecutor buildOperationExecutor, UserCodeApplicationContext userCodeApplicationContext, CollectionCallbackActionDecorator callbackDecorator, DomainObjectCollectionFactory domainObjectCollectionFactory) {
+    public DefaultPluginManager(final PluginRegistry pluginRegistry, Instantiator instantiator, PluginTarget target, BuildOperationExecutor buildOperationExecutor, UserCodeApplicationContext userCodeApplicationContext, DomainObjectCollectionFactory domainObjectCollectionFactory) {
         this.instantiator = instantiator;
         this.target = target;
         this.pluginRegistry = pluginRegistry;
         this.domainObjectCollectionFactory = domainObjectCollectionFactory;
-        this.pluginContainer = new DefaultPluginContainer(pluginRegistry, this, callbackDecorator);
+        this.pluginContainer = domainObjectCollectionFactory.newContainer(DefaultPluginContainer.class, pluginRegistry, this);
         this.buildOperationExecutor = buildOperationExecutor;
         this.userCodeApplicationContext = userCodeApplicationContext;
     }
