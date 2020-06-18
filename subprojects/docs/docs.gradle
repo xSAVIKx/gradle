@@ -22,8 +22,8 @@ plugins {
     // TODO: Apply asciidoctor in documentation plugin instead.
     id 'org.asciidoctor.convert'
     id 'gradlebuild.documentation'
-    id 'gradlebuild.unittest-and-compile'
     id 'org.gradle.samples' version "0.16.8"
+    id 'gradlebuild.unittest-and-compile'
 }
 
 repositories { handler ->
