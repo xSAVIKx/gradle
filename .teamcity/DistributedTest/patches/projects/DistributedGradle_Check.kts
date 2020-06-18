@@ -12,6 +12,9 @@ accordingly, and delete the patch script.
 changeProject(uuid("DistributedGradle_Check")) {
     params {
         add {
+            param("gradle.cache.remote.password", "credentialsJSON:7b004bb5-3736-4116-854a-73f2acf39b8a")
+        }
+        add {
             param("gradle.cache.remote.url", "credentialsJSON:e5dbdfce-68c9-4022-a084-155bd822e791")
         }
     }
