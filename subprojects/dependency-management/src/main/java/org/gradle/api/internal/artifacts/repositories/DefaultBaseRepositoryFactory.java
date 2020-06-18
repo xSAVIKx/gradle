@@ -23,7 +23,6 @@ import org.gradle.api.artifacts.repositories.AuthenticationContainer;
 import org.gradle.api.artifacts.repositories.FlatDirectoryArtifactRepository;
 import org.gradle.api.artifacts.repositories.IvyArtifactRepository;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
-import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.artifacts.BaseRepositoryFactory;
 import org.gradle.api.internal.artifacts.ImmutableModuleIdentifierFactory;
 import org.gradle.api.internal.artifacts.dsl.DefaultRepositoryHandler;
@@ -34,6 +33,7 @@ import org.gradle.api.internal.artifacts.mvnsettings.LocalMavenRepositoryLocator
 import org.gradle.api.internal.artifacts.repositories.metadata.IvyMutableModuleMetadataFactory;
 import org.gradle.api.internal.artifacts.repositories.metadata.MavenMutableModuleMetadataFactory;
 import org.gradle.api.internal.artifacts.repositories.transport.RepositoryTransportFactory;
+import org.gradle.api.internal.collections.DomainObjectCollectionFactory;
 import org.gradle.api.internal.file.FileCollectionFactory;
 import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.model.ObjectFactory;
@@ -75,7 +75,7 @@ public class DefaultBaseRepositoryFactory implements BaseRepositoryFactory {
     private final IvyMutableModuleMetadataFactory ivyMetadataFactory;
     private final IsolatableFactory isolatableFactory;
     private final ObjectFactory objectFactory;
-    private final CollectionCallbackActionDecorator callbackActionDecorator;
+    private final DomainObjectCollectionFactory collectionFactory;
     private final DefaultUrlArtifactRepository.Factory urlArtifactRepositoryFactory;
     private final ChecksumService checksumService;
 
@@ -97,7 +97,7 @@ public class DefaultBaseRepositoryFactory implements BaseRepositoryFactory {
                                         IvyMutableModuleMetadataFactory ivyMetadataFactory,
                                         IsolatableFactory isolatableFactory,
                                         ObjectFactory objectFactory,
-                                        CollectionCallbackActionDecorator callbackActionDecorator,
+                                        DomainObjectCollectionFactory collectionFactory,
                                         DefaultUrlArtifactRepository.Factory urlArtifactRepositoryFactory,
                                         ChecksumService checksumService) {
         this.localMavenRepositoryLocator = localMavenRepositoryLocator;
@@ -119,7 +119,7 @@ public class DefaultBaseRepositoryFactory implements BaseRepositoryFactory {
         this.ivyMetadataFactory = ivyMetadataFactory;
         this.isolatableFactory = isolatableFactory;
         this.objectFactory = objectFactory;
-        this.callbackActionDecorator = callbackActionDecorator;
+        this.collectionFactory = collectionFactory;
         this.urlArtifactRepositoryFactory = urlArtifactRepositoryFactory;
         this.checksumService = checksumService;
     }
@@ -181,8 +181,7 @@ public class DefaultBaseRepositoryFactory implements BaseRepositoryFactory {
     }
 
     protected AuthenticationContainer createAuthenticationContainer() {
-        DefaultAuthenticationContainer container = instantiator.newInstance(DefaultAuthenticationContainer.class, instantiator, callbackActionDecorator);
-
+        DefaultAuthenticationContainer container = collectionFactory.newContainer(DefaultAuthenticationContainer.class);
         for (Map.Entry<Class<Authentication>, Class<? extends Authentication>> e : authenticationSchemeRegistry.getRegisteredSchemes().entrySet()) {
             container.registerBinding(e.getKey(), e.getValue());
         }

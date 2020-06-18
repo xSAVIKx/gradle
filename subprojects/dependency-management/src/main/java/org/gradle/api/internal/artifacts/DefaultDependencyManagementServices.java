@@ -452,7 +452,7 @@ public class DefaultDependencyManagementServices implements DependencyManagement
             IvyMutableModuleMetadataFactory ivyMetadataFactory,
             IsolatableFactory isolatableFactory,
             ObjectFactory objectFactory,
-            CollectionCallbackActionDecorator callbackDecorator,
+            DomainObjectCollectionFactory collectionFactory,
             NamedObjectInstantiator instantiator,
             DefaultUrlArtifactRepository.Factory urlArtifactRepositoryFactory,
             ChecksumService checksumService
@@ -476,7 +476,7 @@ public class DefaultDependencyManagementServices implements DependencyManagement
                 ivyMetadataFactory,
                 isolatableFactory,
                 objectFactory,
-                callbackDecorator,
+                collectionFactory,
                 urlArtifactRepositoryFactory,
                 checksumService
             );
@@ -530,8 +530,8 @@ public class DefaultDependencyManagementServices implements DependencyManagement
             return null;
         }
 
-        ArtifactTypeRegistry createArtifactTypeRegistry(Instantiator instantiator, ImmutableAttributesFactory immutableAttributesFactory, CollectionCallbackActionDecorator decorator) {
-            return new DefaultArtifactTypeRegistry(instantiator, immutableAttributesFactory, decorator);
+        ArtifactTypeRegistry createArtifactTypeRegistry(DomainObjectCollectionFactory collectionFactory, ImmutableAttributesFactory immutableAttributesFactory) {
+            return new DefaultArtifactTypeRegistry(collectionFactory, immutableAttributesFactory);
         }
 
         DependencyHandler createDependencyHandler(Instantiator instantiator, ConfigurationContainerInternal configurationContainer, DependencyFactory dependencyFactory,
