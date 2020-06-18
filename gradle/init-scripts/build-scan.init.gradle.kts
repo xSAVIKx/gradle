@@ -27,7 +27,7 @@ fun configureExtension(extension: Any) {
         } else {
             "publishAlways"()
         }
-        setProperty("server", "https://e.grdev.net")
+        setProperty("server", "https://ge.gradle.org")
 
         if (!System.getProperty("slow.internet.connection", "false").toBoolean()) {
             setProperty("captureTaskInputFiles", true)

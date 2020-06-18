@@ -16,8 +16,8 @@
 package org.gradle.gradlebuild.unittestandcompile
 
 import accessors.base
-import accessors.java
 import accessors.groovy
+import accessors.java
 import buildJvms
 import com.gradle.enterprise.gradleplugin.testdistribution.TestDistributionPlugin
 import libraries
@@ -53,7 +53,6 @@ import org.gradle.process.CommandLineArgumentProvider
 import org.gradle.testing.PerformanceTest
 import org.gradle.testretry.TestRetryPlugin
 import testLibrary
-import java.util.UUID
 import java.util.concurrent.Callable
 import java.util.jar.Attributes
 
@@ -237,11 +236,6 @@ class UnitTestAndCompilePlugin : Plugin<Project> {
     }
 
     private
-    fun Test.addPoisonPill() {
-        inputs.property("poisonPill", UUID.randomUUID().toString())
-    }
-
-    private
     fun Project.configureTests() {
         normalization {
             runtimeClasspath {
@@ -260,7 +254,6 @@ class UnitTestAndCompilePlugin : Plugin<Project> {
             }
             configureJvmForTest()
             addOsAsInputs()
-            addPoisonPill()
 
             if (this !is PerformanceTest) {
                 retry {
