@@ -3,14 +3,6 @@ The Gradle team is excited to announce Gradle @version@.
 This release features [1](), [2](), ... [n](), and more.
 
 We would like to thank the following community contributors to this release of Gradle:
-
-[Danny Thomas](https://github.com/DanielThomas),
-[Daiki Hirabayashi](https://github.com/dhirabayashi),
-[Sebastian Schuberth](https://github.com/sschuberth),
-[Frieder Bluemle](https://github.com/friederbluemle),
-[Brick Tamland](https://github.com/mleveill),
-and [Stefan Oehme](https://github.com/oehme).
-
 <!-- 
 Include only their name, impactful features should be called out separately below.
  [Some person](https://github.com/some-person)
@@ -40,64 +32,6 @@ details of 2
 
 ## n
 -->
-
-## Improved handling of ZIP archives on runtime classpaths
-Runtime classpath analysis can now inspect manifest and `META-INF` properties files, ignore changes to comments, and selectively ignore attributes or properties that don't impact the 
-runtime classpath.
-   
-```groovy
-normalization {
-    runtimeClasspath {
-        metaInf {
-            ignoreAttribute("Implementation-Version")
-            ignoreProperty("timestamp")
-        }
-    }
-}
-```
-
-This improves the likelihood of [build cache hits](userguide/build_cache.html) when jar and property files on the classpath are regenerated and only differ by unimportant values or comments.
- 
-See the [userguide](userguide/more_about_tasks.html#sec:meta_inf_normalization) for further information.  Note that this API is incubating and will likely change in future releases as support 
-is expanded for normalizing properties files outside of `META-INF`.
-
-## Gradle module metadata can be made reproducible
-
-The Gradle Module Metadata file contains a build identifier field which defaults to a unique ID generated during build execution.
-This results in the generated file being different at each build execution.
-
-This value can now be disabled at the publication level, allowing users to opt-in for a reproducible Gradle Module Metadata file.
-
-```groovy
-main(MavenPublication) {
-    from components.java
-    withoutBuildIdentifier()
-}
-```
-
-See the documentation for more information on [Gradle Module Metadata generation](userguide/publishing_gradle_module_metadata.html#sub:gmm-reproducible).
-
-## Variant-aware dependency substitution rules
-
-Previously, it wasn't possible for Gradle to substitute a dependency which uses a classifier with a dependency without classifier, nor was it possible to substitute a dependency _without_ classifier with a classified dependency.
-Similarly, dependencies with attributes (typically "platform" dependencies) or capabilities (typically "test fixtures" dependencies) could not be substituted.
-
-Gradle now supports substitution of dependencies with classifiers, attributes or capabilities.
-Gradle's dependency substitution API has been enriched to cover those cases.
-
-See the documentation on [variant-aware substitution](userguide/file:///home/cchampeau/DEV/PROJECTS/GITHUB/gradle/subprojects/docs/build/working/usermanual/render-multi/resolution_rules.html#sec:variant_aware_substitutions) for details.
-
-## Improvements for plugin authors
-
-### Injectable `ArchiveOperations` service
-
-Previously, it was only possible to create a `FileTree` for a ZIP or TAR archive by using the APIs provided by a `Project`.
-However, a `Project` object is not always available.
-
-The new `ArchiveOperations` service has [zipTree()](javadoc/org/gradle/api/file/ArchiveOperations.html#zipTree-java.lang.Object-) and [tarTree()](javadoc/org/gradle/api/file/ArchiveOperations.html#tarTree-java.lang.Object-) methods for creating read-only `FileTree` instances respectively for ZIP and TAR archives.
-
-See the [user manual](userguide/custom_gradle_types.html#service_injection) for how to inject services and the [`ArchiveOperations`](javadoc/org/gradle/api/file/ArchiveOperations.html) api documentation for more details and examples. 
-
 
 ## Promoted features
 Promoted features are features that were incubating in previous versions of Gradle but are now supported and subject to backwards compatibility.
