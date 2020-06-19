@@ -23,10 +23,11 @@ import org.gradle.api.Incubating;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.internal.CollectionCallbackActionDecorator;
+import org.gradle.api.internal.collections.DomainObjectCollectionFactory;
 import org.gradle.api.internal.project.ProjectIdentifier;
 import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.tasks.TaskContainer;
+import org.gradle.internal.Cast;
 import org.gradle.internal.logging.text.TreeFormatter;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
@@ -56,6 +57,7 @@ import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.platform.base.ComponentType;
 import org.gradle.platform.base.GeneralComponentSpec;
 import org.gradle.platform.base.LibrarySpec;
+import org.gradle.platform.base.Platform;
 import org.gradle.platform.base.PlatformAwareComponentSpec;
 import org.gradle.platform.base.PlatformContainer;
 import org.gradle.platform.base.SourceComponentSpec;
@@ -117,9 +119,11 @@ public class ComponentModelBasePlugin implements Plugin<Project> {
             builder.internalView(PlatformAwareComponentSpecInternal.class);
         }
 
-        @Hidden @Model
-        LanguageTransformContainer languageTransforms(CollectionCallbackActionDecorator collectionCallbackActionDecorator) {
-            return new DefaultLanguageTransformContainer(collectionCallbackActionDecorator);
+        @Hidden
+        @Model
+        LanguageTransformContainer languageTransforms(ServiceRegistry serviceRegistry) {
+            DomainObjectCollectionFactory collectionFactory = serviceRegistry.get(DomainObjectCollectionFactory.class);
+            return collectionFactory.newContainer(DefaultLanguageTransformContainer.class, Cast.uncheckedCast(LanguageTransform.class));
         }
 
         // Finalizing here, as we need this to run after any 'assembling' task (jar, link, etc) is created.
@@ -142,11 +146,13 @@ public class ComponentModelBasePlugin implements Plugin<Project> {
         }
 
         @Model
-        PlatformContainer platforms(Instantiator instantiator, CollectionCallbackActionDecorator collectionCallbackActionDecorator) {
-            return instantiator.newInstance(DefaultPlatformContainer.class, instantiator, collectionCallbackActionDecorator);
+        PlatformContainer platforms(ServiceRegistry serviceRegistry) {
+            DomainObjectCollectionFactory collectionFactory = serviceRegistry.get(DomainObjectCollectionFactory.class);
+            return collectionFactory.newContainer(DefaultPlatformContainer.class, Platform.class);
         }
 
-        @Hidden @Model
+        @Hidden
+        @Model
         PlatformResolvers platformResolver(PlatformContainer platforms) {
             return new DefaultPlatformResolvers(platforms);
         }
@@ -232,7 +238,7 @@ public class ComponentModelBasePlugin implements Plugin<Project> {
         }
 
         @Defaults
-        // TODO:LPTR We should collect all source sets in the project source set, however this messes up ComponentReportRenderer
+            // TODO:LPTR We should collect all source sets in the project source set, however this messes up ComponentReportRenderer
         void addComponentSourcesSetsToProjectSourceSet(@Each SourceComponentSpec component, final ProjectSourceSet projectSourceSet) {
             component.getSources().afterEach(new Action<LanguageSourceSet>() {
                 @Override
@@ -251,10 +257,12 @@ public class ComponentModelBasePlugin implements Plugin<Project> {
         static abstract class AttachInputs extends RuleSource {
             @RuleTarget
             abstract ModelMap<BinarySpec> getBinaries();
+
             abstract void setBinaries(ModelMap<BinarySpec> binaries);
 
             @RuleInput
             abstract ModelMap<LanguageSourceSet> getSources();
+
             abstract void setSources(ModelMap<LanguageSourceSet> sources);
 
             @Mutate
@@ -269,7 +277,8 @@ public class ComponentModelBasePlugin implements Plugin<Project> {
             }
         }
 
-        @Hidden @Model
+        @Hidden
+        @Model
         DependentBinariesResolver dependentBinariesResolver(Instantiator instantiator) {
             return instantiator.newInstance(DefaultDependentBinariesResolver.class);
         }

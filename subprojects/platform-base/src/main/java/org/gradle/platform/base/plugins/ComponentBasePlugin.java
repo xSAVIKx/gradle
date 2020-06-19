@@ -20,7 +20,6 @@ import org.gradle.api.Incubating;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.collections.DomainObjectCollectionFactory;
 import org.gradle.api.internal.project.ProjectIdentifier;
 import org.gradle.api.model.ObjectFactory;
@@ -65,9 +64,9 @@ public class ComponentBasePlugin implements Plugin<Project> {
 
         @Hidden
         @Model
-        ComponentSpecFactory componentSpecFactory(ProjectIdentifier projectIdentifier, Instantiator instantiator, ObjectFactory objectFactory, NamedEntityInstantiator<Task> taskInstantiator, CollectionCallbackActionDecorator collectionCallbackActionDecorator, ServiceRegistry serviceRegistry) {
+        ComponentSpecFactory componentSpecFactory(ProjectIdentifier projectIdentifier, Instantiator instantiator, ObjectFactory objectFactory, NamedEntityInstantiator<Task> taskInstantiator, ServiceRegistry serviceRegistry) {
             DomainObjectCollectionFactory domainObjectCollectionFactory = serviceRegistry.get(DomainObjectCollectionFactory.class);
-            return new ComponentSpecFactory(projectIdentifier, instantiator, taskInstantiator, objectFactory, collectionCallbackActionDecorator, domainObjectCollectionFactory);
+            return new ComponentSpecFactory(projectIdentifier, instantiator, taskInstantiator, objectFactory, domainObjectCollectionFactory);
         }
 
         @ComponentType

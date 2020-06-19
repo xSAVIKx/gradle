@@ -18,8 +18,8 @@ package org.gradle.language.base.plugins;
 import org.gradle.api.Incubating;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.internal.CollectionCallbackActionDecorator;
-import org.gradle.internal.reflect.Instantiator;
+import org.gradle.api.internal.collections.DomainObjectCollectionFactory;
+import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.ProjectSourceSet;
 import org.gradle.language.base.internal.DefaultProjectSourceSet;
@@ -53,8 +53,9 @@ public class LanguageBasePlugin implements Plugin<Project> {
         }
 
         @Model
-        ProjectSourceSet sources(Instantiator instantiator, CollectionCallbackActionDecorator decorator) {
-            return instantiator.newInstance(DefaultProjectSourceSet.class, decorator);
+        ProjectSourceSet sources(ServiceRegistry serviceRegistry) {
+            DomainObjectCollectionFactory collectionFactory = serviceRegistry.get(DomainObjectCollectionFactory.class);
+            return collectionFactory.newContainer(DefaultProjectSourceSet.class, LanguageSourceSet.class);
         }
     }
 }

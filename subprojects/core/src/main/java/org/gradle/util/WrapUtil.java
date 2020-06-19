@@ -18,7 +18,6 @@ package org.gradle.util;
 import org.gradle.api.DomainObjectSet;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.DefaultDomainObjectSet;
-import org.gradle.internal.deprecation.DeprecationLogger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,7 +56,6 @@ public class WrapUtil {
     @SuppressWarnings("varargs")
     @Deprecated
     public static <T> DomainObjectSet<T> toDomainObjectSet(Class<T> type, T... items) {
-        DeprecationLogger.deprecateMethod(WrapUtil.class, "toDomainObjectSet()").replaceWith("ObjectFactory.domainObjectSet()").willBecomeAnErrorInGradle7().undocumented().nagUser();
         DefaultDomainObjectSet<T> set = new DefaultDomainObjectSet<T>(type, CollectionCallbackActionDecorator.NOOP) {
             @Override
             protected boolean createdUsingDeprecatedMethod() {

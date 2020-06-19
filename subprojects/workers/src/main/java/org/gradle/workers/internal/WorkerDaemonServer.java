@@ -136,8 +136,17 @@ public class WorkerDaemonServer implements RequestHandler<TransportableActionExe
             };
         }
 
-        DomainObjectCollectionFactory createDomainObjectCollectionFactory(InstantiatorFactory instantiatorFactory, ServiceRegistry services) {
-            return new DefaultDomainObjectCollectionFactory(instantiatorFactory, services, CollectionCallbackActionDecorator.NOOP, MutationGuards.identity());
+        CollectionCallbackActionDecorator createCollectionCallbackActionDecorator() {
+            return CollectionCallbackActionDecorator.NOOP;
+        }
+
+        Instantiator createInstantiator(InstantiatorFactory instantiatorFactory) {
+            // Do not decorate object created for worker actions
+            return instantiatorFactory.injectLenient();
+        }
+
+        DomainObjectCollectionFactory createDomainObjectCollectionFactory(InstantiatorFactory instantiatorFactory, CollectionCallbackActionDecorator decorator, ServiceRegistry services) {
+            return new DefaultDomainObjectCollectionFactory(instantiatorFactory, services, decorator, MutationGuards.identity());
         }
     }
 
