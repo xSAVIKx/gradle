@@ -16,9 +16,9 @@
 
 package org.gradle.instantexecution.serialization.codecs
 
+import org.gradle.api.file.ArchiveOperations
 import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.ProjectLayout
-import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder
 import org.gradle.api.internal.artifacts.transform.ArtifactTransformActionScheme
 import org.gradle.api.internal.artifacts.transform.ArtifactTransformListener
 import org.gradle.api.internal.artifacts.transform.ArtifactTransformParameterScheme
@@ -92,7 +92,6 @@ class Codecs(
     projectStateRegistry: ProjectStateRegistry,
     taskNodeFactory: TaskNodeFactory,
     fingerprinterRegistry: FileCollectionFingerprinterRegistry,
-    projectFinder: ProjectFinder,
     buildOperationExecutor: BuildOperationExecutor,
     classLoaderHierarchyHasher: ClassLoaderHierarchyHasher,
     isolatableFactory: IsolatableFactory,
@@ -133,14 +132,34 @@ class Codecs(
 
         // Dependency management types
         bind(ArtifactCollectionCodec(fileCollectionFactory))
-        bind(ImmutableAttributeCodec(attributesFactory))
-        bind(AttributeContainerCodec(attributesFactory))
+        bind(ImmutableAttributesCodec(attributesFactory, managedFactoryRegistry))
+        bind(AttributeContainerCodec(attributesFactory, managedFactoryRegistry))
         bind(TransformationNodeReferenceCodec)
+        bind(TransformationStepCodec(projectStateRegistry, fingerprinterRegistry))
+        bind(DefaultTransformerCodec(buildOperationExecutor, classLoaderHierarchyHasher, isolatableFactory, valueSnapshotter, fileCollectionFactory, fileLookup, parameterScheme, actionScheme))
+        bind(LegacyTransformerCodec(actionScheme))
+        bind(ResolvableArtifactCodec)
+        bind(PublishArtifactLocalArtifactMetadataCodec)
 
         bind(DefaultCopySpecCodec(patternSetFactory, fileCollectionFactory, instantiator))
         bind(DestinationRootCopySpecCodec(fileResolver))
 
         bind(TaskReferenceCodec)
+
+        bind(IsolatedManagedValueCodec(managedFactoryRegistry))
+        bind(IsolatedImmutableManagedValueCodec(managedFactoryRegistry))
+        bind(IsolatedSerializedValueSnapshotCodec)
+        bind(IsolatedArrayCodec)
+        bind(IsolatedSetCodec)
+        bind(IsolatedListCodec)
+        bind(IsolatedMapCodec)
+        bind(MapEntrySnapshotCodec)
+        bind(IsolatedEnumValueSnapshotCodec)
+        bind(StringValueSnapshotCodec)
+        bind(IntegerValueSnapshotCodec)
+        bind(FileValueSnapshotCodec)
+        bind(BooleanValueSnapshotCodec)
+        bind(NullValueSnapshotCodec)
 
         bind(ownerServiceCodec<ProviderFactory>())
         bind(ownerServiceCodec<ObjectFactory>())
@@ -152,6 +171,7 @@ class Codecs(
         bind(ownerServiceCodec<FileCollectionFactory>())
         bind(ownerServiceCodec<FileSystemOperations>())
         bind(ownerServiceCodec<FileOperations>())
+        bind(ownerServiceCodec<ArchiveOperations>())
         bind(ownerServiceCodec<BuildOperationExecutor>())
         bind(ownerServiceCodec<ToolingModelBuilderRegistry>())
         bind(ownerServiceCodec<ExecOperations>())
@@ -174,34 +194,17 @@ class Codecs(
     }
 
     val internalTypesCodec = BindingsBackedCodec {
-
         baseTypes()
 
         providerTypes(propertyFactory, filePropertyFactory, buildServiceRegistry, valueSourceProviderFactory)
         fileCollectionTypes(directoryFileTreeFactory, fileCollectionFactory, fileOperations, fileSystem, fileFactory, patternSetFactory)
 
         bind(TaskNodeCodec(projectStateRegistry, userTypesCodec, taskNodeFactory))
-        bind(InitialTransformationNodeCodec(buildOperationExecutor, transformListener))
-        bind(ChainedTransformationNodeCodec(buildOperationExecutor, transformListener))
+        bind(InitialTransformationNodeCodec(userTypesCodec, buildOperationExecutor, transformListener))
+        bind(ChainedTransformationNodeCodec(userTypesCodec, buildOperationExecutor, transformListener))
         bind(ActionNodeCodec)
-        bind(ResolvableArtifactCodec)
-        bind(TransformationStepCodec(projectStateRegistry, fingerprinterRegistry, projectFinder))
-        bind(DefaultTransformerCodec(userTypesCodec, buildOperationExecutor, classLoaderHierarchyHasher, isolatableFactory, valueSnapshotter, fileCollectionFactory, fileLookup, parameterScheme, actionScheme))
-        bind(LegacyTransformerCodec(actionScheme))
 
-        bind(IsolatedManagedValueCodec(managedFactoryRegistry))
-        bind(IsolatedImmutableManagedValueCodec(managedFactoryRegistry))
-        bind(IsolatedArrayCodec)
-        bind(IsolatedSetCodec)
-        bind(IsolatedListCodec)
-        bind(IsolatedMapCodec)
-        bind(MapEntrySnapshotCodec)
-        bind(IsolatedEnumValueSnapshotCodec)
-        bind(StringValueSnapshotCodec)
-        bind(IntegerValueSnapshotCodec)
-        bind(FileValueSnapshotCodec)
-        bind(BooleanValueSnapshotCodec)
-        bind(NullValueSnapshotCodec)
+        bind(ResolvableArtifactCodec)
 
         bind(NotImplementedCodec)
     }
