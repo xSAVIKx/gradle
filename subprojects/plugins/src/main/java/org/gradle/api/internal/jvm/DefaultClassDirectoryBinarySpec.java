@@ -19,10 +19,8 @@ import org.gradle.api.DomainObjectSet;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.component.LibraryBinaryIdentifier;
 import org.gradle.api.internal.AbstractBuildableComponentSpec;
-import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.collections.DomainObjectCollectionFactory;
 import org.gradle.api.tasks.SourceSet;
-import org.gradle.internal.reflect.Instantiator;
 import org.gradle.jvm.ClassDirectoryBinarySpec;
 import org.gradle.jvm.internal.toolchain.JavaToolChainInternal;
 import org.gradle.jvm.platform.JavaPlatform;
@@ -51,13 +49,13 @@ public class DefaultClassDirectoryBinarySpec extends AbstractBuildableComponentS
     private final BinaryTasksCollection tasks;
     private boolean buildable = true;
 
-    public DefaultClassDirectoryBinarySpec(ComponentSpecIdentifier componentIdentifier, SourceSet sourceSet, JavaToolChain toolChain, JavaPlatform platform, Instantiator instantiator, NamedEntityInstantiator<Task> taskInstantiator, CollectionCallbackActionDecorator collectionCallbackActionDecorator, DomainObjectCollectionFactory domainObjectCollectionFactory) {
+    public DefaultClassDirectoryBinarySpec(ComponentSpecIdentifier componentIdentifier, SourceSet sourceSet, JavaToolChain toolChain, JavaPlatform platform, NamedEntityInstantiator<Task> taskInstantiator, DomainObjectCollectionFactory domainObjectCollectionFactory) {
         super(componentIdentifier, ClassDirectoryBinarySpec.class);
         this.sourceSet = sourceSet;
         this.toolChain = toolChain;
         this.platform = platform;
         this.sourceSets = domainObjectCollectionFactory.newDomainObjectSet(LanguageSourceSet.class);
-        this.tasks = instantiator.newInstance(DefaultBinaryTasksCollection.class, this, taskInstantiator, collectionCallbackActionDecorator);
+        this.tasks = domainObjectCollectionFactory.newContainer(DefaultBinaryTasksCollection.class, Task.class, this, taskInstantiator);
     }
 
     @Override

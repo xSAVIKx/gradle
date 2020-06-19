@@ -64,6 +64,8 @@ class VersionNumberIntegrationTest extends AbstractIntegrationSpec {
         """
 
         expect:
+        // The Kotlin plugin uses an internal method
+        executer.expectDeprecationWarning("The WrapUtil.toDomainObjectSet() method has been deprecated. This will fail with an error in Gradle 7.0. Please use the ObjectFactory.domainObjectSet() method instead.")
         succeeds 'classes'
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.gradle.util
 
+import org.gradle.api.DomainObjectSet
 import org.gradle.api.Task
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.internal.CollectionCallbackActionDecorator
@@ -89,6 +90,15 @@ class TestUtil {
 
     static DomainObjectCollectionFactory domainObjectCollectionFactory() {
         return services().get(DomainObjectCollectionFactory)
+    }
+
+    /**
+     * Wraps the given items in a mutable domain object set.
+     */
+    static <T> DomainObjectSet<T> toDomainObjectSet(Class<T> type, T... items) {
+        def set = domainObjectCollectionFactory().newNamedDomainObjectSet(type)
+        set.addAll(items.toList())
+        return set
     }
 
     static ProviderFactory providerFactory() {

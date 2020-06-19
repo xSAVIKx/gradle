@@ -72,8 +72,15 @@ public class DefaultDomainObjectCollection<T> extends AbstractCollection<T> impl
         this(filter.getType(), collection.filteredStore(filter), collection.filteredEvents(filter));
     }
 
+    protected boolean createdUsingDeprecatedMethod() {
+        return false;
+    }
+
     @Inject
     protected CollectionCallbackActionDecorator getCollectionCallbackActionDecorator() {
+        if (createdUsingDeprecatedMethod()) {
+            return CollectionCallbackActionDecorator.NOOP;
+        }
         throw new UnsupportedOperationException(String.format("%s subtypes must be instantiated by Gradle and not instantiated directly.", DomainObjectCollection.class.getName()));
     }
 

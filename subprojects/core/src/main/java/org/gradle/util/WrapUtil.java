@@ -18,6 +18,7 @@ package org.gradle.util;
 import org.gradle.api.DomainObjectSet;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.DefaultDomainObjectSet;
+import org.gradle.internal.deprecation.DeprecationLogger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,11 +50,20 @@ public class WrapUtil {
 
     /**
      * Wraps the given items in a mutable domain object set.
+     *
+     * @deprecated Use {@link org.gradle.api.model.ObjectFactory#domainObjectSet(Class)} instead.
      */
     @SafeVarargs
     @SuppressWarnings("varargs")
+    @Deprecated
     public static <T> DomainObjectSet<T> toDomainObjectSet(Class<T> type, T... items) {
-        DefaultDomainObjectSet<T> set = new DefaultDomainObjectSet<T>(type, CollectionCallbackActionDecorator.NOOP);
+        DeprecationLogger.deprecateMethod(WrapUtil.class, "toDomainObjectSet()").replaceWith("ObjectFactory.domainObjectSet()").willBecomeAnErrorInGradle7().undocumented().nagUser();
+        DefaultDomainObjectSet<T> set = new DefaultDomainObjectSet<T>(type, CollectionCallbackActionDecorator.NOOP) {
+            @Override
+            protected boolean createdUsingDeprecatedMethod() {
+                return true;
+            }
+        };
         set.addAll(Arrays.asList(items));
         return set;
     }
