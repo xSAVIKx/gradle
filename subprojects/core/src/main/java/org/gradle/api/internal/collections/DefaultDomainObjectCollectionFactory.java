@@ -39,6 +39,8 @@ import org.gradle.internal.instantiation.InstanceGenerator;
 import org.gradle.internal.instantiation.InstantiatorFactory;
 import org.gradle.internal.service.ServiceRegistry;
 
+import java.util.Collection;
+
 public class DefaultDomainObjectCollectionFactory implements DomainObjectCollectionFactory {
     private final InstantiatorFactory instantiatorFactory;
     private final ServiceRegistry servicesToInject;
@@ -101,12 +103,12 @@ public class DefaultDomainObjectCollectionFactory implements DomainObjectCollect
     }
 
     @Override
-    public <T> CompositeDomainObjectSet<T> newDomainObjectSet(Class<T> elementType, DomainObjectCollection<? extends T> collection) {
-        return CompositeDomainObjectSet.create(elementType, serviceInjectingInstantiator, collectionCallbackActionDecorator, collection);
+    public <T> CompositeDomainObjectSet<T> newCompositeDomainObjectSet(Class<T> elementType, Collection<? extends DomainObjectCollection<? extends T>> collections) {
+        return CompositeDomainObjectSet.create(elementType, this, collectionCallbackActionDecorator, collections);
     }
 
     @Override
-    public <C extends DomainObjectCollection<T>, T> C newContainer(Class<? extends C> implType, Object... args) {
+    public <C extends DomainObjectCollection<T>, T> C newContainer(Class<? extends C> implType, Class<T> elementType, Object... args) {
         return serviceInjectingInstantiator.newInstance(implType, args);
     }
 }

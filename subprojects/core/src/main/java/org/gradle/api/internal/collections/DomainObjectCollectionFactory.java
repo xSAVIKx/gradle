@@ -26,6 +26,8 @@ import org.gradle.api.NamedDomainObjectList;
 import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.api.internal.CompositeDomainObjectSet;
 
+import java.util.Collection;
+
 public interface DomainObjectCollectionFactory {
     /**
      * Creates a {@link NamedDomainObjectContainer} for managing named objects of the specified type.
@@ -61,9 +63,9 @@ public interface DomainObjectCollectionFactory {
     /**
      * Creates a {@link CompositeDomainObjectSet} for managing a collection of {@link DomainObjectCollection} of the specified type.
      */
-    <T> CompositeDomainObjectSet<T> newDomainObjectSet(Class<T> elementType, DomainObjectCollection<? extends T> collection);
+    <T> CompositeDomainObjectSet<T> newCompositeDomainObjectSet(Class<T> elementType, Collection<? extends DomainObjectCollection<? extends T>> collections);
 
     <T> ExtensiblePolymorphicDomainObjectContainer<T> newPolymorphicDomainObjectContainer(Class<T> elementType);
 
-    <C extends DomainObjectCollection<T>, T> C newContainer(Class<? extends C> implType, Object... args);
+    <C extends DomainObjectCollection<T>, T> C newContainer(Class<? extends C> implType, Class<T> elementType, Object... args);
 }

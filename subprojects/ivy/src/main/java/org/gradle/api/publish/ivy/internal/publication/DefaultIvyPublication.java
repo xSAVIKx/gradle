@@ -83,6 +83,7 @@ import org.gradle.util.GUtil;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -150,14 +151,14 @@ public class DefaultIvyPublication implements IvyPublicationInternal {
         this.projectDependencyResolver = projectDependencyResolver;
         this.domainObjectCollectionFactory = domainObjectCollectionFactory;
         this.platformSupport = platformSupport;
-        this.configurations = domainObjectCollectionFactory.newContainer(DefaultIvyConfigurationContainer.class);
+        this.configurations = domainObjectCollectionFactory.newContainer(DefaultIvyConfigurationContainer.class, IvyConfiguration.class);
         this.immutableAttributesFactory = immutableAttributesFactory;
         this.versionMappingStrategy = versionMappingStrategy;
-        this.mainArtifacts = domainObjectCollectionFactory.newContainer(DefaultIvyArtifactSet.class, name, ivyArtifactNotationParser, fileCollectionFactory);
-        this.metadataArtifacts = domainObjectCollectionFactory.newContainer(Cast.uncheckedCast(DefaultPublicationArtifactSet.class), IvyArtifact.class, "metadata artifacts for " + name, fileCollectionFactory);
-        this.derivedArtifacts = domainObjectCollectionFactory.newContainer(Cast.uncheckedCast(DefaultPublicationArtifactSet.class), IvyArtifact.class, "derived artifacts for " + name, fileCollectionFactory);
-        this.publishableArtifacts = new CompositePublicationArtifactSet<>(IvyArtifact.class, Cast.uncheckedCast(new PublicationArtifactSet<?>[]{mainArtifacts, metadataArtifacts, derivedArtifacts}));
-        this.ivyDependencies = domainObjectCollectionFactory.newContainer(DefaultIvyDependencySet.class);
+        this.mainArtifacts = domainObjectCollectionFactory.newContainer(DefaultIvyArtifactSet.class, IvyArtifact.class, name, ivyArtifactNotationParser, fileCollectionFactory);
+        this.metadataArtifacts = domainObjectCollectionFactory.newContainer(Cast.uncheckedCast(DefaultPublicationArtifactSet.class), IvyArtifact.class, IvyArtifact.class, "metadata artifacts for " + name, fileCollectionFactory);
+        this.derivedArtifacts = domainObjectCollectionFactory.newContainer(Cast.uncheckedCast(DefaultPublicationArtifactSet.class), IvyArtifact.class, IvyArtifact.class, "derived artifacts for " + name, fileCollectionFactory);
+        this.publishableArtifacts = domainObjectCollectionFactory.newContainer(Cast.uncheckedCast(CompositePublicationArtifactSet.class), IvyArtifact.class, IvyArtifact.class, Arrays.asList(mainArtifacts, metadataArtifacts, derivedArtifacts));
+        this.ivyDependencies = domainObjectCollectionFactory.newContainer(DefaultIvyDependencySet.class, IvyDependencyInternal.class);
         this.descriptor = instantiator.newInstance(DefaultIvyModuleDescriptorSpec.class, this, instantiator, objectFactory);
     }
 
@@ -550,9 +551,7 @@ public class DefaultIvyPublication implements IvyPublicationInternal {
             }
             return true;
         });
-        CompositeDomainObjectSet<IvyArtifact> ivyArtifacts = domainObjectCollectionFactory.newDomainObjectSet(IvyArtifact.class, mainArtifacts);
-        ivyArtifacts.addCollection(metadataArtifacts);
-        ivyArtifacts.addCollection(derivedArtifacts);
+        CompositeDomainObjectSet<IvyArtifact> ivyArtifacts = domainObjectCollectionFactory.newCompositeDomainObjectSet(IvyArtifact.class, Arrays.asList(mainArtifacts, metadataArtifacts, derivedArtifacts));
         Set<IvyArtifact> artifactsToBePublished = ivyArtifacts.matching(new Spec<IvyArtifact>() {
             @Override
             public boolean isSatisfiedBy(IvyArtifact element) {

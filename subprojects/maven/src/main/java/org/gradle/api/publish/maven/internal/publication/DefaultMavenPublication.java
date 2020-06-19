@@ -22,7 +22,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.gradle.api.Action;
-import org.gradle.api.DomainObjectCollection;
 import org.gradle.api.DomainObjectSet;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Task;
@@ -38,7 +37,6 @@ import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.capabilities.Capability;
 import org.gradle.api.component.AdhocComponentWithVariants;
 import org.gradle.api.component.SoftwareComponent;
-import org.gradle.api.internal.CompositeDomainObjectSet;
 import org.gradle.api.internal.artifacts.DefaultExcludeRule;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier;
@@ -90,6 +88,7 @@ import org.gradle.util.GUtil;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -149,6 +148,7 @@ public class DefaultMavenPublication implements MavenPublicationInternal {
     private final Set<MavenDependency> importDependencyConstraints = new LinkedHashSet<>();
     private final ProjectDependencyPublicationResolver projectDependencyResolver;
     private final ImmutableAttributesFactory immutableAttributesFactory;
+    private final DomainObjectCollectionFactory domainObjectCollectionFactory;
     private final VersionMappingStrategyInternal versionMappingStrategy;
     private final PlatformSupport platformSupport;
     private final Set<String> silencedVariants = new HashSet<>();
@@ -174,12 +174,13 @@ public class DefaultMavenPublication implements MavenPublicationInternal {
         this.projectDependencyResolver = projectDependencyResolver;
         this.projectIdentity = projectIdentity;
         this.immutableAttributesFactory = immutableAttributesFactory;
+        this.domainObjectCollectionFactory = domainObjectCollectionFactory;
         this.versionMappingStrategy = versionMappingStrategy;
         this.platformSupport = platformSupport;
-        this.mainArtifacts = domainObjectCollectionFactory.newContainer(DefaultMavenArtifactSet.class, name, mavenArtifactParser, fileCollectionFactory);
-        this.metadataArtifacts = domainObjectCollectionFactory.newContainer(Cast.uncheckedCast(DefaultPublicationArtifactSet.class), MavenArtifact.class, "metadata artifacts for " + name, fileCollectionFactory);
-        derivedArtifacts = domainObjectCollectionFactory.newContainer(Cast.uncheckedCast(DefaultPublicationArtifactSet.class), MavenArtifact.class, "derived artifacts for " + name, fileCollectionFactory);
-        publishableArtifacts = new CompositePublicationArtifactSet<>(MavenArtifact.class, Cast.uncheckedCast(new PublicationArtifactSet<?>[]{mainArtifacts, metadataArtifacts, derivedArtifacts}));
+        this.mainArtifacts = domainObjectCollectionFactory.newContainer(DefaultMavenArtifactSet.class, MavenArtifact.class, name, mavenArtifactParser, fileCollectionFactory);
+        this.metadataArtifacts = domainObjectCollectionFactory.newContainer(Cast.uncheckedCast(DefaultPublicationArtifactSet.class), MavenArtifact.class, MavenArtifact.class, "metadata artifacts for " + name, fileCollectionFactory);
+        derivedArtifacts = domainObjectCollectionFactory.newContainer(Cast.uncheckedCast(DefaultPublicationArtifactSet.class), MavenArtifact.class, MavenArtifact.class, "derived artifacts for " + name, fileCollectionFactory);
+        publishableArtifacts = domainObjectCollectionFactory.newContainer(Cast.uncheckedCast(CompositePublicationArtifactSet.class), MavenArtifact.class, MavenArtifact.class, Arrays.asList(mainArtifacts, metadataArtifacts, derivedArtifacts));
         pom = instantiator.newInstance(DefaultMavenPom.class, this, instantiator, objectFactory);
     }
 
@@ -673,21 +674,17 @@ public class DefaultMavenPublication implements MavenPublicationInternal {
     }
 
     private DomainObjectSet<MavenArtifact> artifactsToBePublished() {
-        return CompositeDomainObjectSet.create(
-            MavenArtifact.class,
-            Cast.uncheckedCast(
-                new DomainObjectCollection<?>[]{mainArtifacts, metadataArtifacts, derivedArtifacts}
-            )
-        ).matching(element -> {
-            if (!((PublicationArtifactInternal) element).shouldBePublished()) {
-                return false;
-            }
-            if (moduleMetadataArtifact == element) {
-                // We temporarily want to allow skipping the publication of Gradle module metadata
-                return moduleMetadataArtifact.isEnabled();
-            }
-            return true;
-        });
+        return domainObjectCollectionFactory.newCompositeDomainObjectSet(MavenArtifact.class, Arrays.asList(mainArtifacts, metadataArtifacts, derivedArtifacts))
+            .matching(element -> {
+                if (!((PublicationArtifactInternal) element).shouldBePublished()) {
+                    return false;
+                }
+                if (moduleMetadataArtifact == element) {
+                    // We temporarily want to allow skipping the publication of Gradle module metadata
+                    return moduleMetadataArtifact.isEnabled();
+                }
+                return true;
+            });
     }
 
     private MavenArtifact getPomArtifact() {

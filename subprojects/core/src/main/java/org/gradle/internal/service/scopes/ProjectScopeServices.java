@@ -17,6 +17,7 @@
 package org.gradle.internal.service.scopes;
 
 import org.gradle.api.AntBuilder;
+import org.gradle.api.component.SoftwareComponent;
 import org.gradle.api.component.SoftwareComponentContainer;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.DomainObjectContext;
@@ -200,7 +201,7 @@ public class ProjectScopeServices extends DefaultServiceRegistry {
     }
 
     protected SoftwareComponentContainer createSoftwareComponentContainer(DomainObjectCollectionFactory factory) {
-        return factory.newContainer(DefaultSoftwareComponentContainer.class);
+        return factory.newContainer(DefaultSoftwareComponentContainer.class, SoftwareComponent.class);
     }
 
     protected ProjectFinder createProjectFinder(final BuildStateRegistry buildStateRegistry) {

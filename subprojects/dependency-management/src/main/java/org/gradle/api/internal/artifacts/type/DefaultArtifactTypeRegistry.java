@@ -44,7 +44,7 @@ public class DefaultArtifactTypeRegistry implements ArtifactTypeRegistry {
     @Override
     public ArtifactTypeContainer create() {
         if (artifactTypeDefinitions == null) {
-            artifactTypeDefinitions = collectionFactory.newContainer(DefaultArtifactTypeContainer.class, attributesFactory);
+            artifactTypeDefinitions = collectionFactory.newContainer(DefaultArtifactTypeContainer.class, ArtifactTypeDefinition.class, attributesFactory);
         }
         return artifactTypeDefinitions;
     }

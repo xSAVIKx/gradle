@@ -69,7 +69,7 @@ public class DefaultPluginManager implements PluginManagerInternal {
         this.target = target;
         this.pluginRegistry = pluginRegistry;
         this.domainObjectCollectionFactory = domainObjectCollectionFactory;
-        this.pluginContainer = domainObjectCollectionFactory.newContainer(DefaultPluginContainer.class, pluginRegistry, this);
+        this.pluginContainer = domainObjectCollectionFactory.newContainer(DefaultPluginContainer.class, Plugin.class, pluginRegistry, this);
         this.buildOperationExecutor = buildOperationExecutor;
         this.userCodeApplicationContext = userCodeApplicationContext;
     }

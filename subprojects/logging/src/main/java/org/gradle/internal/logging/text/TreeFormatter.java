@@ -125,7 +125,11 @@ public class TreeFormatter implements DiagnosticsVisitor {
                 if (i > 0) {
                     append(", ");
                 }
-                appendType(typeArgument);
+                if (typeArgument == null) {
+                    append("?");
+                } else {
+                    appendType(typeArgument);
+                }
             }
             append(">");
         } else {

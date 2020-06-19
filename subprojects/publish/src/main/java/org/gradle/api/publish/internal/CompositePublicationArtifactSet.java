@@ -17,22 +17,24 @@
 package org.gradle.api.publish.internal;
 
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.CompositeDomainObjectSet;
 import org.gradle.api.internal.DelegatingDomainObjectSet;
+import org.gradle.api.internal.collections.DomainObjectCollectionFactory;
 import org.gradle.api.internal.file.UnionFileCollection;
 import org.gradle.api.publish.PublicationArtifact;
+
+import java.util.List;
 
 public class CompositePublicationArtifactSet<T extends PublicationArtifact> extends DelegatingDomainObjectSet<T> implements PublicationArtifactSet<T> {
 
     private final FileCollection files;
 
-    @SafeVarargs
-    @SuppressWarnings("varargs")
-    public CompositePublicationArtifactSet(Class<T> type, PublicationArtifactSet<T>... artifactSets) {
-        super(CompositeDomainObjectSet.create(type, artifactSets));
-        FileCollection[] fileCollections = new FileCollection[artifactSets.length];
-        for (int i = 0; i < artifactSets.length; i++) {
-            fileCollections[i] = artifactSets[i].getFiles();
+    public CompositePublicationArtifactSet(Class<T> type, DomainObjectCollectionFactory collectionFactory, CollectionCallbackActionDecorator callbackActionDecorator, List<? extends PublicationArtifactSet<T>> artifactSets) {
+        super(CompositeDomainObjectSet.create(type, collectionFactory, callbackActionDecorator, artifactSets));
+        FileCollection[] fileCollections = new FileCollection[artifactSets.size()];
+        for (int i = 0; i < artifactSets.size(); i++) {
+            fileCollections[i] = artifactSets.get(i).getFiles();
         }
         files = new UnionFileCollection(fileCollections);
     }

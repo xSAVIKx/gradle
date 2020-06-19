@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import org.gradle.StartParameter;
 import org.gradle.api.Describable;
 import org.gradle.api.artifacts.ConfigurablePublishArtifact;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.component.ComponentArtifactIdentifier;
 import org.gradle.api.artifacts.dsl.ArtifactHandler;
 import org.gradle.api.artifacts.dsl.ComponentMetadataHandler;
@@ -28,9 +29,9 @@ import org.gradle.api.artifacts.dsl.DependencyConstraintHandler;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.dsl.DependencyLockingHandler;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
+import org.gradle.api.artifacts.repositories.ArtifactRepository;
 import org.gradle.api.attributes.AttributesSchema;
 import org.gradle.api.file.ProjectLayout;
-import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.DocumentationRegistry;
 import org.gradle.api.internal.DomainObjectContext;
 import org.gradle.api.internal.FeaturePreviews;
@@ -483,7 +484,7 @@ public class DefaultDependencyManagementServices implements DependencyManagement
         }
 
         RepositoryHandler createRepositoryHandler(DomainObjectCollectionFactory factory, BaseRepositoryFactory baseRepositoryFactory) {
-            return factory.newContainer(DefaultRepositoryHandler.class, baseRepositoryFactory);
+            return factory.newContainer(DefaultRepositoryHandler.class, ArtifactRepository.class, baseRepositoryFactory);
         }
 
         ConfigurationContainerInternal createConfigurationContainer(DomainObjectCollectionFactory factory,
@@ -498,6 +499,7 @@ public class DefaultDependencyManagementServices implements DependencyManagement
                                                                     DocumentationRegistry documentationRegistry, UserCodeApplicationContext userCodeApplicationContext,
                                                                     DomainObjectCollectionFactory domainObjectCollectionFactory, ObjectFactory objectFactory) {
             return factory.newContainer(DefaultConfigurationContainer.class,
+                Configuration.class,
                 configurationResolver,
                 domainObjectContext,
                 listenerManager,
@@ -714,10 +716,9 @@ public class DefaultDependencyManagementServices implements DependencyManagement
 
         @Override
         public RepositoryHandler createRepositoryHandler() {
-            Instantiator instantiator = services.get(Instantiator.class);
+            DomainObjectCollectionFactory collectionFactory = services.get(DomainObjectCollectionFactory.class);
             BaseRepositoryFactory baseRepositoryFactory = services.get(BaseRepositoryFactory.class);
-            CollectionCallbackActionDecorator callbackDecorator = services.get(CollectionCallbackActionDecorator.class);
-            return instantiator.newInstance(DefaultRepositoryHandler.class, baseRepositoryFactory, instantiator, callbackDecorator);
+            return collectionFactory.newContainer(DefaultRepositoryHandler.class, ArtifactRepository.class, baseRepositoryFactory);
         }
 
         @Override

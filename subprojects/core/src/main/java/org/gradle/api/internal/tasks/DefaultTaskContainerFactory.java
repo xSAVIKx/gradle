@@ -62,7 +62,7 @@ public class DefaultTaskContainerFactory implements Factory<TaskContainerInterna
 
     @Override
     public TaskContainerInternal create() {
-        DefaultTaskContainer tasks = collectionFactory.newContainer(DefaultTaskContainer.class, project);
+        DefaultTaskContainer tasks = collectionFactory.newContainer(DefaultTaskContainer.class, Task.class, project);
         bridgeIntoSoftwareModelWhenNeeded(tasks);
         return tasks;
     }

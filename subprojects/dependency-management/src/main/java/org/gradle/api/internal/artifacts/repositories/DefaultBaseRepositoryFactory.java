@@ -181,7 +181,7 @@ public class DefaultBaseRepositoryFactory implements BaseRepositoryFactory {
     }
 
     protected AuthenticationContainer createAuthenticationContainer() {
-        DefaultAuthenticationContainer container = collectionFactory.newContainer(DefaultAuthenticationContainer.class);
+        DefaultAuthenticationContainer container = collectionFactory.newContainer(DefaultAuthenticationContainer.class, Authentication.class);
         for (Map.Entry<Class<Authentication>, Class<? extends Authentication>> e : authenticationSchemeRegistry.getRegisteredSchemes().entrySet()) {
             container.registerBinding(e.getKey(), e.getValue());
         }
